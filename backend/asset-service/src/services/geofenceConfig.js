@@ -1,4 +1,5 @@
 const { createHttpClient } = require('../../../shared/http');
+const { getInternalServiceUrl } = require('../../../shared/internalServices');
 const assignmentModel = require('../models/assignment');
 
 const client = createHttpClient();
@@ -10,7 +11,7 @@ function areaName(index) {
 async function sendToDevice(assignmentId) {
   const assignment = await assignmentModel.getAssignmentById(assignmentId);
   const enriched = await assignmentModel.getAssignmentByImei(assignment.imei);
-  const baseUrl = process.env.DEVICE_GATEWAY_URL || 'http://localhost:5001';
+  const baseUrl = getInternalServiceUrl('DEVICE_GATEWAY_URL');
 
   const facilities = enriched.facilities.slice(0, 5);
   for (let index = 0; index < facilities.length; index += 1) {

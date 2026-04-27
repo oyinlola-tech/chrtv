@@ -143,11 +143,13 @@ Copy [.env.example](/C:/Users/donri/Desktop/CH%20RTV%201/.env.example:1) to `.en
 - `JWT_SECRET`
 - service base URLs
 - Option 1 CMA-CGM path values
+- all internal service URLs are required and are loaded from the root `.env`
 
 Important:
 
 - the local workspace already has a `.env`
 - change the JWT secret before production use
+- use the internal loopback URLs from `.env` for service-to-service communication
 
 ## Setup
 

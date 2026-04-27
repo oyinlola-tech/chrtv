@@ -1,8 +1,9 @@
 const httpClient = require('../utils/httpClient');
+const { getInternalServiceUrl } = require('../../../shared/internalServices');
 const positionStore = require('./positionStore');
 
 async function getAssignment(imei) {
-  const baseUrl = process.env.ASSET_SERVICE_URL || 'http://localhost:3002';
+  const baseUrl = getInternalServiceUrl('ASSET_SERVICE_URL');
   try {
     const response = await httpClient.get(`${baseUrl}/internal/assignment/${imei}`);
     return response.data.assignment || null;
@@ -15,13 +16,13 @@ async function getAssignment(imei) {
 }
 
 async function sendEvent(event) {
-  const baseUrl = process.env.INTEGRATION_SERVICE_URL || 'http://localhost:3003';
+  const baseUrl = getInternalServiceUrl('INTEGRATION_SERVICE_URL');
   await httpClient.post(`${baseUrl}/events`, event);
   positionStore.pushRecentEvent(event);
 }
 
 async function sendCoordinate(position, assignment) {
-  const baseUrl = process.env.INTEGRATION_SERVICE_URL || 'http://localhost:3003';
+  const baseUrl = getInternalServiceUrl('INTEGRATION_SERVICE_URL');
   await httpClient.post(`${baseUrl}/coordinates`, {
     imei: position.imei,
     lat: position.data.latitude,
