@@ -30,91 +30,96 @@ Services in the platform:
 
 ```text
 CH RTV 1/
-├── .env
-├── .env.example
-├── .gitignore
-├── README.md
-├── backend/
-│   ├── package.json
-│   ├── package-lock.json
-│   ├── admin-api/
-│   │   ├── server.js
-│   │   └── src/
-│   │       ├── middleware/
-│   │       ├── routes/
-│   │       └── services/
-│   ├── asset-service/
-│   │   ├── server.js
-│   │   └── src/
-│   │       ├── models/
-│   │       ├── routes/
-│   │       └── services/
-│   ├── database/
-│   │   └── schema.js
-│   ├── device-gateway/
-│   │   ├── server.js
-│   │   └── src/
-│   │       ├── routes/
-│   │       ├── utils/
-│   │       ├── commandSender.js
-│   │       ├── deviceManager.js
-│   │       ├── deviceProtocol.js
-│   │       ├── eventPublisher.js
-│   │       └── tcpServer.js
-│   ├── integration-service/
-│   │   ├── server.js
-│   │   └── src/
-│   │       ├── models/
-│   │       ├── routes/
-│   │       ├── services/
-│   │       └── utils/
-│   ├── scripts/
-│   │   └── start-all.js
-│   ├── shared/
-│   │   ├── db.js
-│   │   ├── env.js
-│   │   ├── http.js
-│   │   └── jwt.js
-│   └── tracking-service/
-│       ├── server.js
-│       └── src/
-│           ├── models/
-│           ├── routes/
-│           ├── services/
-│           └── utils/
-├── docs/
-│   ├── api-spec.md
-│   └── architecture.md
-└── public/
-    ├── assets/
-    ├── auth/
-    │   └── login/
-    │       └── index.html
-    ├── dashboard/
-    │   └── index.html
-    ├── orders/
-    │   └── index.html
-    ├── assignments/
-    │   └── index.html
-    ├── facilities/
-    │   └── index.html
-    ├── devices/
-    │   └── index.html
-    ├── integration/
-    │   └── index.html
-    ├── users/
-    │   └── index.html
-    ├── css/
-    │   └── app.css
-    ├── js/
-    │   ├── api.js
-    │   ├── main.js
-    │   ├── map.js
-    │   └── ui.js
-    ├── command-center/
-    ├── fleet/
-    ├── logistic/
-    └── tracking/
++-- .env
++-- .env.example
++-- .gitignore
++-- README.md
++-- backend/
+|   +-- package.json
+|   +-- package-lock.json
+|   +-- admin-api/
+|   |   +-- server.js
+|   |   \-- src/
+|   |       +-- middleware/
+|   |       +-- routes/
+|   |       \-- services/
+|   +-- asset-service/
+|   |   +-- server.js
+|   |   \-- src/
+|   |       +-- models/
+|   |       +-- routes/
+|   |       \-- services/
+|   +-- database/
+|   |   \-- schema.js
+|   +-- device-gateway/
+|   |   +-- server.js
+|   |   \-- src/
+|   |       +-- routes/
+|   |       +-- utils/
+|   |       +-- commandSender.js
+|   |       +-- deviceManager.js
+|   |       +-- deviceProtocol.js
+|   |       +-- eventPublisher.js
+|   |       \-- tcpServer.js
+|   +-- docs/
+|   |   +-- openapi.js
+|   |   \-- openapi.json
+|   +-- integration-service/
+|   |   +-- server.js
+|   |   \-- src/
+|   |       +-- models/
+|   |       +-- routes/
+|   |       +-- services/
+|   |       \-- utils/
+|   +-- scripts/
+|   |   +-- generate-swagger.js
+|   |   \-- start-all.js
+|   +-- shared/
+|   |   +-- db.js
+|   |   +-- env.js
+|   |   +-- http.js
+|   |   +-- internalServices.js
+|   |   \-- jwt.js
+|   \-- tracking-service/
+|       +-- server.js
+|       \-- src/
+|           +-- models/
+|           +-- routes/
+|           +-- services/
+|           \-- utils/
++-- docs/
+|   +-- api-spec.md
+|   \-- architecture.md
+\-- public/
+    +-- assets/
+    +-- auth/
+    |   \-- login/
+    |       \-- index.html
+    +-- dashboard/
+    |   \-- index.html
+    +-- orders/
+    |   \-- index.html
+    +-- assignments/
+    |   \-- index.html
+    +-- facilities/
+    |   \-- index.html
+    +-- devices/
+    |   \-- index.html
+    +-- integration/
+    |   \-- index.html
+    +-- users/
+    |   \-- index.html
+    +-- css/
+    |   \-- app.css
+    +-- js/
+    |   +-- api.js
+    |   +-- main.js
+    |   +-- map.js
+    |   \-- ui.js
+    +-- command-center/
+    +-- fleet/
+    +-- logistic/
+    \-- tracking/
 ```
 
 ## Tech Stack
@@ -141,6 +146,8 @@ Copy [.env.example](/C:/Users/donri/Desktop/CH%20RTV%201/.env.example:1) to `.en
 
 - database credentials
 - `JWT_SECRET`
+- `INITIAL_ADMIN_USERNAME`
+- `INITIAL_ADMIN_PASSWORD`
 - service base URLs
 - Option 1 CMA-CGM path values
 - all internal service URLs are required and are loaded from the root `.env`
@@ -174,6 +181,12 @@ npm run schema
 npm start
 ```
 
+Generate or refresh the Swagger / OpenAPI file:
+
+```bash
+npm run swagger:generate
+```
+
 Or run services individually:
 
 ```bash
@@ -192,16 +205,15 @@ http://localhost:4000/auth/login
 
 ## First Admin User
 
-If the `users` table is empty, create the first admin:
+The first admin credentials now come from the root `.env`:
 
-`POST /api/auth/bootstrap`
+- `INITIAL_ADMIN_USERNAME`
+- `INITIAL_ADMIN_PASSWORD`
 
-```json
-{
-  "username": "admin",
-  "password": "change-me"
-}
-```
+Behavior:
+
+- when `admin-api` starts and the `users` table is empty, it creates the initial admin automatically
+- `POST /api/auth/bootstrap` also uses those same env values if you want to bootstrap manually before first login
 
 ## Frontend Routes
 
@@ -215,6 +227,22 @@ The frontend uses folder-based routes instead of `.html` URLs:
 - `/devices`
 - `/integration`
 - `/users`
+
+## Swagger / OpenAPI
+
+Swagger is available from the `admin-api`.
+
+Generate the spec:
+
+```bash
+cd backend
+npm run swagger:generate
+```
+
+View the docs in the browser after `admin-api` is running:
+
+- `http://localhost:4000/api/docs`
+- `http://localhost:4000/api/docs/openapi.json`
 
 ## Default Flow
 
@@ -236,6 +264,21 @@ The frontend uses folder-based routes instead of `.html` URLs:
 - the gateway uses TCP `5000` and HTTP `5001` because raw TCP and Express cannot share one port in the same process safely
 - Option 2 is currently only a stub
 - before real device testing, the COBAN SMS command `protocol<password> 18 out` must be sent outside the software
+
+## Security
+
+Security hardening currently in place:
+
+- internal service URLs are validated and must come from the root `.env`
+- JWT secret is required from `.env`
+- the initial admin username and password come from `.env`
+- `helmet` headers are enabled on `admin-api`
+- CORS is restricted by `ALLOWED_ORIGIN`
+- `express-rate-limit` is applied to auth, docs, reads, and writes
+- request body size is limited
+- sensitive admin routes use request validation
+- bootstrap is loopback-only
+- proxy errors are sanitized before they are returned to clients
 
 ## Verification Status
 

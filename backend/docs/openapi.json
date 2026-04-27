@@ -1,0 +1,528 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "CH RTV Platform API",
+    "version": "1.0.0",
+    "description": "Admin API and platform entry points for the Carrier Haulage Real-Time Visibility platform."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "admin-api"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "username": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "admin",
+                  "operator"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "DeviceCommandRequest": {
+        "type": "object",
+        "required": [
+          "imei",
+          "keyword"
+        ],
+        "properties": {
+          "imei": {
+            "type": "string"
+          },
+          "keyword": {
+            "type": "string"
+          },
+          "params": {
+            "type": "string"
+          }
+        }
+      },
+      "UserCreateRequest": {
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "operator"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "security": [],
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "Service health"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "security": [],
+        "summary": "Login and receive JWT",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/bootstrap": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "security": [],
+        "summary": "Bootstrap the first admin from environment variables",
+        "responses": {
+          "201": {
+            "description": "Bootstrap completed"
+          },
+          "409": {
+            "description": "Bootstrap already completed"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Get current token identity",
+        "responses": {
+          "200": {
+            "description": "Current user payload"
+          }
+        }
+      }
+    },
+    "/api/dashboard/stats": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get dashboard statistics",
+        "responses": {
+          "200": {
+            "description": "Dashboard statistics"
+          }
+        }
+      }
+    },
+    "/api/dashboard/positions": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get recent positions",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recent position feed"
+          }
+        }
+      }
+    },
+    "/api/dashboard/events": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get recent events",
+        "responses": {
+          "200": {
+            "description": "Recent events"
+          }
+        }
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "List transport orders",
+        "responses": {
+          "200": {
+            "description": "Orders list"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Create transport order",
+        "responses": {
+          "201": {
+            "description": "Order created"
+          }
+        }
+      }
+    },
+    "/api/orders/{id}": {
+      "put": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Update transport order",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order updated"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Delete transport order",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order deleted"
+          }
+        }
+      }
+    },
+    "/api/facilities": {
+      "get": {
+        "tags": [
+          "Facilities"
+        ],
+        "summary": "List facilities",
+        "responses": {
+          "200": {
+            "description": "Facilities list"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Facilities"
+        ],
+        "summary": "Create facility",
+        "responses": {
+          "201": {
+            "description": "Facility created"
+          }
+        }
+      }
+    },
+    "/api/facilities/{id}": {
+      "put": {
+        "tags": [
+          "Facilities"
+        ],
+        "summary": "Update facility",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Facility updated"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Facilities"
+        ],
+        "summary": "Delete facility",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Facility deleted"
+          }
+        }
+      }
+    },
+    "/api/assignments": {
+      "get": {
+        "tags": [
+          "Assignments"
+        ],
+        "summary": "List assignments",
+        "responses": {
+          "200": {
+            "description": "Assignments list"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Assignments"
+        ],
+        "summary": "Create assignment",
+        "responses": {
+          "201": {
+            "description": "Assignment created"
+          }
+        }
+      }
+    },
+    "/api/assignments/{id}": {
+      "put": {
+        "tags": [
+          "Assignments"
+        ],
+        "summary": "Update assignment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Assignment updated"
+          }
+        }
+      }
+    },
+    "/api/devices": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "List connected devices",
+        "responses": {
+          "200": {
+            "description": "Connected devices"
+          }
+        }
+      }
+    },
+    "/api/devices/command": {
+      "post": {
+        "tags": [
+          "Devices"
+        ],
+        "summary": "Send command to device",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceCommandRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Command sent"
+          }
+        }
+      }
+    },
+    "/api/integration/config": {
+      "get": {
+        "tags": [
+          "Integration"
+        ],
+        "summary": "Get integration config",
+        "responses": {
+          "200": {
+            "description": "Integration config"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Integration"
+        ],
+        "summary": "Update integration config",
+        "responses": {
+          "200": {
+            "description": "Integration config updated"
+          }
+        }
+      }
+    },
+    "/api/integration/logs": {
+      "get": {
+        "tags": [
+          "Integration"
+        ],
+        "summary": "Get recent integration logs",
+        "responses": {
+          "200": {
+            "description": "Integration logs"
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "List users",
+        "responses": {
+          "200": {
+            "description": "Users list"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Create user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created"
+          }
+        }
+      }
+    }
+  }
+}

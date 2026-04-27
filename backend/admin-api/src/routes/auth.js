@@ -1,19 +1,22 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { query } = require('../../../shared/db');
+const { getRequiredEnv } = require('../../../shared/env');
 const { signUser, verifyToken } = require('../../../shared/jwt');
+const asyncHandler = require('../middleware/asyncHandler');
 const { createRateLimiter } = require('../middleware/rateLimit');
+const {
+  requireJsonObjectBody,
+  validateCredentials,
+  requireLoopback,
+} = require('../middleware/validators');
 
 const router = express.Router();
 const authReadRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 60 });
 const bootstrapRateLimit = createRateLimiter({ windowMs: 60 * 60 * 1000, max: 5 });
 
-router.post('/login', async (req, res) => {
-  const { username, password } = req.body || {};
-  if (!username || !password) {
-    return res.status(400).json({ error: 'username and password are required' });
-  }
-
+router.post('/login', requireJsonObjectBody, validateCredentials, asyncHandler(async (req, res) => {
+  const { username, password } = req.body;
   const users = await query('SELECT * FROM users WHERE username = ?', [username]);
   const user = users[0];
   if (!user) {
@@ -34,27 +37,24 @@ router.post('/login', async (req, res) => {
       role: user.role,
     },
   });
-});
+}));
 
-router.post('/bootstrap', bootstrapRateLimit, async (req, res) => {
-  const { username, password } = req.body || {};
-  if (!username || !password) {
-    return res.status(400).json({ error: 'username and password are required' });
-  }
-
+router.post('/bootstrap', bootstrapRateLimit, requireLoopback, asyncHandler(async (req, res) => {
   const rows = await query('SELECT COUNT(*) AS total FROM users');
   if (rows[0].total > 0) {
     return res.status(409).json({ error: 'Bootstrap already completed' });
   }
 
+  const username = getRequiredEnv('INITIAL_ADMIN_USERNAME');
+  const password = getRequiredEnv('INITIAL_ADMIN_PASSWORD');
   const passwordHash = await bcrypt.hash(password, 10);
   await query(
     'INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)',
     [username, passwordHash, 'admin']
   );
 
-  return res.status(201).json({ ok: true });
-});
+  return res.status(201).json({ ok: true, username });
+}));
 
 router.get('/me', authReadRateLimit, (req, res) => {
   const header = req.headers.authorization || '';

@@ -10,6 +10,7 @@
     "start:asset-service": "node asset-service/server.js",
     "start:integration-service": "node integration-service/server.js",
     "start:admin-api": "node admin-api/server.js",
+    "swagger:generate": "node scripts/generate-swagger.js",
     "security:audit": "npm audit --omit=dev"
   },
   "dependencies": {
@@ -17,8 +18,11 @@
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
+    "express-rate-limit": "^7.5.0",
     "express": "^5.2.1",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.22.3"
+    "mysql2": "^3.22.3",
+    "swagger-ui-express": "^5.0.1"
   }
 }
