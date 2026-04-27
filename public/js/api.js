@@ -33,3 +33,31 @@ export async function fetchFleet(page = 1, limit = 10) {
     if (!res.ok) throw new Error(`Fleet fetch failed: ${res.status}`);
     return res.json();
 }
+
+export async function fetchShipments() {
+    const res = await fetch(`${BASE_URL}/shipments`);
+    if (!res.ok) throw new Error(`Shipments fetch failed: ${res.status}`);
+    return res.json();
+}
+
+export async function fetchAlertStats() {
+    const res = await fetch(`${BASE_URL}/alert-stats`);
+    if (!res.ok) throw new Error('Failed to fetch stats');
+    return res.json();
+}
+
+export async function fetchAlerts(severity = '', sort = '') {
+    const params = new URLSearchParams();
+    if (severity) params.append('severity', severity);
+    if (sort) params.append('sort', sort);
+    const res = await fetch(`${BASE_URL}/alerts?${params.toString()}`);
+    if (!res.ok) throw new Error('Failed to fetch alerts');
+    return res.json();
+}
+
+export async function fetchReports() {
+    const res = await fetch(`${BASE_URL}/reports`);
+    if (!res.ok) throw new Error('Failed to fetch reports');
+    return res.json();
+}
+

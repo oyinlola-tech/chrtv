@@ -42,3 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // Optional: Refresh every 60 seconds
 // setInterval(renderDashboard, 60000);
 
+// js/main.js
+import { loadShipments } from './ui.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadShipments();
+});
