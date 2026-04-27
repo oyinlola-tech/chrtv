@@ -1,306 +1,232 @@
 <!DOCTYPE html>
 <html class="dark" lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Login to CHRTV Logistics fleet management dashboard." />
-  <title>Login | CHRTV Logistics</title>
-
-  <!-- Tailwind + plugins -->
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-
-  <!-- Fonts (Inter + Material Symbols only once) -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-
-  <!-- Tailwind configuration – extended with semantic tokens -->
-  <script id="tailwind-config">
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            "surface-container-highest": "#33343e",
-            "tertiary-container": "#c24100",
-            "surface-dim": "#11131c",
-            "secondary-fixed": "#dae2fd",
-            "primary-fixed": "#dde1ff",
-            "border-subtle": "#334155",
-            "surface-card": "#1E293B",
-            "text-primary": "#F8FAFC",
-            "surface-container-low": "#191b24",
-            "on-tertiary-fixed": "#380d00",
-            "surface-container-high": "#282933",
-            "outline-variant": "#434656",
-            "on-surface-variant": "#c4c5d9",
-            "tertiary": "#ffb59b",
-            "tertiary-fixed-dim": "#ffb59b",
-            "surface-bright": "#373943",
-            "on-surface": "#e2e1ef",
-            "on-tertiary": "#5b1a00",
-            "on-secondary-fixed": "#131b2e",
-            "on-tertiary-container": "#ffece6",
-            "secondary": "#bec6e0",
-            "on-primary-fixed": "#001356",
-            "error": "#ffb4ab",
-            "on-secondary-container": "#adb4ce",
-            "inverse-surface": "#e2e1ef",
-            "inverse-on-surface": "#2e303a",
-            "surface-tint": "#b8c3ff",
-            "surface-sidebar": "#0F172A",
-            "surface-container-lowest": "#0c0e17",
-            "on-tertiary-fixed-variant": "#812800",
-            "surface-container": "#1d1f29",
-            "tertiary-fixed": "#ffdbcf",
-            "background-main": "#0B0E14",
-            "on-error-container": "#ffdad6",
-            "on-error": "#690005",
-            "inverse-primary": "#124af0",
-            "status-green": "#10B981",
-            "primary-fixed-dim": "#b8c3ff",
-            "on-primary-container": "#efefff",
-            "background": "#11131c",
-            "secondary-fixed-dim": "#bec6e0",
-            "on-secondary-fixed-variant": "#3f465c",
-            "primary-container": "#2e5bff",
-            "primary": "#b8c3ff",
-            "status-yellow": "#F59E0B",
-            "status-gray": "#64748B",
-            "on-primary": "#002388",
-            "on-secondary": "#283044",
-            "surface": "#11131c",
-            "on-background": "#e2e1ef",
-            "status-red": "#EF4444",
-            "on-primary-fixed-variant": "#0035be",
-            "surface-variant": "#33343e",
-            "error-container": "#93000a",
-            "outline": "#8e90a2",
-            "text-secondary": "#94A3B8",
-            "secondary-container": "#3f465c"
-          },
-          borderRadius: {
-            DEFAULT: "0.125rem",
-            lg: "0.25rem",
-            xl: "0.5rem",
-            full: "0.75rem"
-          },
-          spacing: {
-            "container-margin": "24px",
-            base: "8px",
-            "navbar-height": "64px",
-            gutter: "16px",
-            "sidebar-width": "260px"
-          },
-          width: {
-            "form-lg": "480px",
-            "form-xl": "560px",
-            "stats-panel": "20rem"
-          },
-          fontSize: {
-            "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
-            "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
-            "mono-data": ["14px", { lineHeight: "20px", fontWeight: "600" }],
-            "headline-md": ["20px", { lineHeight: "28px", fontWeight: "500" }],
-            "headline-xl": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "600" }],
-            "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "500" }],
-            "headline-lg": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }],
-            "2xs": ["10px", { lineHeight: "14px" }]
-          },
-          fontFamily: {
-            "body-md": ["Inter"],
-            "body-lg": ["Inter"],
-            "mono-data": ["Inter"],
-            "headline-md": ["Inter"],
-            "headline-xl": ["Inter"],
-            "label-md": ["Inter"],
-            "headline-lg": ["Inter"]
-          },
-          boxShadow: {
-            "primary-glow": "0 0 8px #2e5bff",
-            "yellow-glow": "0 0 8px #F59E0B"
-          }
-        },
-      },
-    }
-  </script>
-
-  <!-- Minimal custom styles for material symbols & gradients -->
-  <style>
-    .material-symbols-outlined {
-      font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
-      vertical-align: middle;
-    }
-    .material-symbols-filled {
-      font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
-    }
-    .glass-panel {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(51, 65, 85, 0.5);
-    }
-    .logistics-bg {
-      background-image: linear-gradient(rgba(11, 14, 20, 0.4), rgba(11, 14, 20, 0.8)),
-        url(https://lh3.googleusercontent.com/aida-public/AB6AXuAN6094x1kXOtCveovjyeyfwlN6p81fUIFzIUnarxqRN2n1kPEb6RldwOKXuCVzKoT-XIG26YlfqjGAwuFBcRvsw_2ganwb4wF3HCQnIWOYx1xdnaus7n4gQ6PaGq8n-DLMt7lY756MSBQK74Gx6wI6h-G_HUu1j_E030aDYHauxFxuSWDR_mBmHsUj39C59QPA90802ZjId7fRsX0o1XSpWvNr3zShGiknisN3un8ltSdG-llUlIKW_F3I5cSsCu0brc-SN6A7BA0s);
-      background-size: cover;
-      background-position: center;
-    }
-    .map-gradient {
-      background-image: radial-gradient(circle at 50% 50%, #2e5bff33 0%, transparent 70%);
-    }
-  </style>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Login | CHRTV Logistics</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-highest": "#33343e",
+                        "tertiary-container": "#c24100",
+                        "surface-dim": "#11131c",
+                        "secondary-fixed": "#dae2fd",
+                        "primary-fixed": "#dde1ff",
+                        "border-subtle": "#334155",
+                        "surface-card": "#1E293B",
+                        "text-primary": "#F8FAFC",
+                        "surface-container-low": "#191b24",
+                        "on-tertiary-fixed": "#380d00",
+                        "surface-container-high": "#282933",
+                        "outline-variant": "#434656",
+                        "on-surface-variant": "#c4c5d9",
+                        "tertiary": "#ffb59b",
+                        "tertiary-fixed-dim": "#ffb59b",
+                        "surface-bright": "#373943",
+                        "on-surface": "#e2e1ef",
+                        "on-tertiary": "#5b1a00",
+                        "on-secondary-fixed": "#131b2e",
+                        "on-tertiary-container": "#ffece6",
+                        "secondary": "#bec6e0",
+                        "on-primary-fixed": "#001356",
+                        "error": "#ffb4ab",
+                        "on-secondary-container": "#adb4ce",
+                        "inverse-surface": "#e2e1ef",
+                        "inverse-on-surface": "#2e303a",
+                        "surface-tint": "#b8c3ff",
+                        "surface-sidebar": "#0F172A",
+                        "surface-container-lowest": "#0c0e17",
+                        "on-tertiary-fixed-variant": "#812800",
+                        "surface-container": "#1d1f29",
+                        "tertiary-fixed": "#ffdbcf",
+                        "background-main": "#0B0E14",
+                        "on-error-container": "#ffdad6",
+                        "on-error": "#690005",
+                        "inverse-primary": "#124af0",
+                        "status-green": "#10B981",
+                        "primary-fixed-dim": "#b8c3ff",
+                        "on-primary-container": "#efefff",
+                        "background": "#11131c",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "primary-container": "#2e5bff",
+                        "primary": "#b8c3ff",
+                        "status-yellow": "#F59E0B",
+                        "status-gray": "#64748B",
+                        "on-primary": "#002388",
+                        "on-secondary": "#283044",
+                        "surface": "#11131c",
+                        "on-background": "#e2e1ef",
+                        "status-red": "#EF4444",
+                        "on-primary-fixed-variant": "#0035be",
+                        "surface-variant": "#33343e",
+                        "error-container": "#93000a",
+                        "outline": "#8e90a2",
+                        "text-secondary": "#94A3B8",
+                        "secondary-container": "#3f465c"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.125rem",
+                        lg: "0.25rem",
+                        xl: "0.5rem",
+                        full: "0.75rem"
+                    },
+                    spacing: {
+                        "container-margin": "24px",
+                        base: "8px",
+                        "navbar-height": "64px",
+                        gutter: "16px",
+                        "sidebar-width": "260px"
+                    },
+                    fontFamily: {
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "mono-data": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    fontSize: {
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "mono-data": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "500"}],
+                        "headline-xl": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+                    }
+                }
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+            vertical-align: middle;
+        }
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #0B0E14;
+        }
+        .logistics-bg {
+            background-image: linear-gradient(rgba(11, 14, 20, 0.4), rgba(11, 14, 20, 0.8)), url(https://lh3.googleusercontent.com/aida-public/AB6AXuAN6094x1kXOtCveovjyeyfwlN6p81fUIFzIUnarxqRN2n1kPEb6RldwOKXuCVzKoT-XIG26YlfqjGAwuFBcRvsw_2ganwb4wF3HCQnIWOYx1xdnaus7n4gQ6PaGq8n-DLMt7lY756MSBQK74Gx6wI6h-G_HUu1j_E030aDYHauxFxuSWDR_mBmHsUj39C59QPA90802ZjId7fRsX0o1XSpWvNr3zShGiknisN3un8ltSdG-llUlIKW_F3I5cSsCu0brc-SN6A7BA0s);
+            background-size: cover;
+            background-position: center;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+        }
+        .skeleton {
+            background: linear-gradient(90deg, #1e293b 0%, #2d3748 50%, #1e293b 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
 </head>
-<body class="dark bg-background-main font-body-md text-on-surface antialiased">
-  <main class="min-h-screen flex">
-    <!-- Left side: Login form -->
-    <div class="w-full lg:w-form-lg xl:w-form-xl flex flex-col justify-center px-10 md:px-20 bg-background-main relative z-10">
-      <!-- Brand logo -->
-      <a href="/" class="absolute top-10 left-10 md:left-20" aria-label="CHRTV home">
-        <span class="text-2xl font-black tracking-tighter text-primary-container">CHRTV</span>
-      </a>
-
-      <div class="max-w-md w-full">
-        <div class="mb-10">
-          <h1 class="font-headline-xl text-headline-xl text-text-primary mb-2">Welcome back</h1>
-          <p class="font-body-lg text-body-lg text-text-secondary">Enter your credentials to access your fleet dashboard.</p>
-        </div>
-
-        <form class="space-y-6" method="post" action="/login" autocomplete="on">
-          <div>
-            <label class="block font-label-md text-label-md text-on-surface-variant mb-2 uppercase tracking-widest" for="email">
-              Corporate Email
-            </label>
-            <div class="relative">
-              <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-xl pointer-events-none" aria-hidden="true">mail</span>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="name@chrtv.logistics"
-                autocomplete="email"
-                required
-                class="w-full bg-surface-container-low border border-border-subtle rounded-lg py-3.5 pl-12 pr-4 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container focus:border-transparent transition-all placeholder:text-slate-600"
-              />
+<body class="dark overflow-hidden">
+    <main class="min-h-screen flex">
+        <!-- Left Side: Login Form -->
+        <div class="w-full lg:w-[480px] xl:w-[560px] flex flex-col justify-center px-6 sm:px-10 md:px-20 bg-background-main relative z-10">
+            <!-- Brand -->
+            <div class="absolute top-10 left-6 sm:left-10 md:left-20">
+                <span class="text-2xl font-black tracking-tighter text-primary-container">CHRTV</span>
             </div>
-          </div>
-
-          <div>
-            <label class="block font-label-md text-label-md text-on-surface-variant mb-2 uppercase tracking-widest" for="password">
-              Password
-            </label>
-            <div class="relative">
-              <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-xl pointer-events-none" aria-hidden="true">lock</span>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="••••••••"
-                autocomplete="current-password"
-                required
-                class="w-full bg-surface-container-low border border-border-subtle rounded-lg py-3.5 pl-12 pr-4 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container focus:border-transparent transition-all placeholder:text-slate-600"
-              />
+            <div class="max-w-md w-full">
+                <div class="mb-10">
+                    <h1 class="font-headline-xl text-headline-xl text-text-primary mb-2">Welcome back</h1>
+                    <p class="font-body-lg text-body-lg text-text-secondary">Enter your credentials to access your fleet dashboard.</p>
+                </div>
+                <form id="login-form" class="space-y-6">
+                    <div>
+                        <label class="block font-label-md text-label-md text-on-surface-variant mb-2 uppercase tracking-widest" for="email">Corporate Email</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-[20px]">mail</span>
+                            <input id="email" name="email" type="email" placeholder="name@chrtv.logistics" class="w-full bg-surface-container-low border border-border-subtle rounded-lg py-3.5 pl-12 pr-4 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container focus:border-transparent transition-all placeholder:text-slate-600" autocomplete="username"/>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-label-md text-label-md text-on-surface-variant mb-2 uppercase tracking-widest" for="password">Password</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-[20px]">lock</span>
+                            <input id="password" name="password" type="password" placeholder="••••••••" class="w-full bg-surface-container-low border border-border-subtle rounded-lg py-3.5 pl-12 pr-4 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container focus:border-transparent transition-all placeholder:text-slate-600" autocomplete="current-password"/>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="remember-me" type="checkbox" class="h-4 w-4 rounded border-border-subtle bg-surface-container-low text-primary-container focus:ring-primary-container"/>
+                            <label for="remember-me" class="ml-2 block font-body-md text-body-md text-text-secondary">Remember me</label>
+                        </div>
+                        <div>
+                            <a class="font-label-md text-label-md text-primary hover:text-primary-container transition-colors font-semibold" href="#">Forgot password?</a>
+                        </div>
+                    </div>
+                    <div id="login-error" class="text-status-red text-sm hidden"></div>
+                    <button id="login-btn" type="submit" class="w-full bg-primary-container text-on-primary-container font-headline-md text-headline-md py-4 rounded-xl shadow-lg shadow-primary-container/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2">
+                        <span id="btn-text">Sign In</span>
+                        <span class="material-symbols-outlined text-[20px]" id="btn-icon">arrow_forward</span>
+                    </button>
+                </form>
+                <div class="mt-12 pt-8 border-t border-border-subtle">
+                    <p class="font-body-md text-body-md text-text-secondary">
+                        Authorized personnel only. Access is monitored.
+                        <a class="text-on-surface-variant hover:text-text-primary underline transition-colors ml-1" href="#">Privacy Protocol</a>
+                    </p>
+                </div>
             </div>
-          </div>
-
-          <div class="flex items-center justify-between">
-            <div class="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                class="h-4 w-4 rounded border-border-subtle bg-surface-container-low text-primary-container focus:ring-primary-container"
-              />
-              <label class="ml-2 block font-body-md text-body-md text-text-secondary cursor-pointer" for="remember-me">
-                Remember me
-              </label>
+        </div>
+        <!-- Right Side: Visual Anchor (hidden on mobile) -->
+        <div id="right-panel" class="hidden lg:block flex-1 relative logistics-bg">
+            <div class="absolute inset-0 bg-gradient-to-l from-transparent via-background-main/20 to-background-main"></div>
+            <!-- Dynamic content container -->
+            <div id="dashboard-preview" class="absolute top-24 right-12 w-80 space-y-4">
+                <!-- Loading skeletons -->
+                <div class="skeleton h-40 rounded-xl"></div>
+                <div class="skeleton h-32 rounded-xl"></div>
+                <div class="skeleton h-16 rounded-xl"></div>
             </div>
-            <div>
-              <a href="/forgot-password" class="font-label-md text-label-md text-primary hover:text-primary-container transition-colors font-semibold">
-                Forgot password?
-              </a>
+            <!-- Quote (static, but can be fetched too) -->
+            <div class="absolute bottom-12 left-12 right-12">
+                <div class="max-w-lg">
+                    <p class="font-headline-lg text-headline-lg text-white leading-tight mb-4">
+                        "Precision in movement, absolute clarity in tracking. The command center for modern logistics."
+                    </p>
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-full border border-primary-container/50 bg-primary-container/10 flex items-center justify-center text-primary font-bold">JD</div>
+                        <div>
+                            <p class="font-label-md text-label-md text-white">Jameson Drake</p>
+                            <p class="font-body-md text-body-md text-slate-400">Chief Operations Officer, CHRTV</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-
-          <button
-            type="submit"
-            class="w-full bg-primary-container text-on-primary-container font-headline-md text-headline-md py-4 rounded-xl shadow-lg shadow-primary-container/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
-          >
-            Sign In
-            <span class="material-symbols-outlined text-xl" aria-hidden="true">arrow_forward</span>
-          </button>
-        </form>
-
-        <div class="mt-12 pt-8 border-t border-border-subtle">
-          <p class="font-body-md text-body-md text-text-secondary">
-            Authorized personnel only. Access is monitored.
-            <a href="/privacy" class="text-on-surface-variant hover:text-text-primary underline transition-colors ml-1">Privacy Protocol</a>
-          </p>
         </div>
-      </div>
-    </div>
-
-    <!-- Right side: Visual panel (hidden on mobile) -->
-    <div
-      class="hidden lg:block flex-1 relative logistics-bg"
-      role="img"
-      aria-label="Modern logistics hub at dusk with long exposure light trails from cargo trucks and glowing warehouse indicators in deep navy and blue tones"
-    >
-      <div class="absolute inset-0 bg-gradient-to-l from-transparent via-background-main/20 to-background-main"></div>
-
-      <!-- Stats overlay -->
-      <div class="absolute top-24 right-12 w-stats-panel space-y-4">
-        <!-- Fleet Status card -->
-        <div class="glass-panel p-6 rounded-xl">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-1">Fleet Status</p>
-              <h3 class="font-headline-md text-headline-md text-text-primary">842 Active Units</h3>
+    </main>
+    <!-- Footer -->
+    <footer class="fixed bottom-0 w-full px-8 py-4 bg-transparent z-20">
+        <div class="flex flex-col md:flex-row justify-between items-center w-full lg:w-[480px] xl:w-[560px]">
+            <span class="font-inter text-xs uppercase tracking-widest text-slate-500">© 2024 CHRTV Logistics. All rights reserved.</span>
+            <div class="flex gap-4 mt-2 md:mt-0">
+                <a class="font-inter text-xs uppercase tracking-widest text-slate-500 hover:text-blue-400 transition-colors" href="#">Help Center</a>
+                <a class="font-inter text-xs uppercase tracking-widest text-slate-500 hover:text-blue-400 transition-colors" href="#">Terms</a>
             </div>
-            <span class="material-symbols-filled text-status-green" aria-hidden="true">monitoring</span>
-          </div>
-          <div class="w-full bg-slate-700/50 h-1.5 rounded-full overflow-hidden">
-            <div class="bg-status-green h-full w-[94%]"></div>
-          </div>
-          <p class="mt-3 font-body-md text-body-md text-text-secondary flex items-center gap-2">
-            <span class="flex h-2 w-2 rounded-full bg-status-green" aria-hidden="true"></span>
-            94% Operational Efficiency
-          </p>
         </div>
+    </footer>
 
-        <!-- Live Traffic Map card -->
-        <div class="glass-panel p-6 rounded-xl">
-          <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-4">Live Traffic Map</p>
-          <div class="aspect-video w-full rounded-lg bg-slate-900/50 relative overflow-hidden flex items-center justify-center map-gradient" aria-label="Global Logistics Route Map">
-            <span class="material-symbols-outlined text-outline-variant text-4xl" aria-hidden="true">map</span>
-            <!-- Decorative data points -->
-            <div class="absolute top-1/4 left-1/3 h-2 w-2 bg-primary-container rounded-full animate-pulse shadow-primary-glow" aria-hidden="true"></div>
-            <div class="absolute bottom-1/3 right-1/4 h-2 w-2 bg-status-yellow rounded-full animate-pulse shadow-yellow-glow" aria-hidden="true"></div>
-            <div class="absolute top-1/2 right-1/2 h-2 w-2 bg-primary-container rounded-full animate-pulse shadow-primary-glow" aria-hidden="true"></div>
-          </div>
-        </div>
-
-        <!-- Enterprise Security badge -->
-        <div class="glass-panel p-4 rounded-xl flex items-center gap-4">
-          <div class="h-10 w-10 rounded-full bg-surface-container-highest flex items-center justify-center" aria-hidden="true">
-            <span class="material-symbols-outlined text-on-surface-variant">security</span>
-          </div>
-          <div>
-            <p class="font-label-md text-label-md text-text-primary">Enterprise Secured</p>
-            <p class="font-body-md text-2xs text-text-secondary leading-tight">256-bit AES Encryption active</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <!-- Footer -->
-  <footer class="fixed bottom-0 w-full px-8 py-4 bg-transparent z-20">
-    <div class="flex flex-col md:flex-row justify-between items-center w-full lg:w-form-lg xl:w-form-xl">
-      <span class="text-xs uppercase tracking-widest text-slate-500">© 2026 CHRTV Logistics. All rights reserved.</span>
-      <div class="flex gap-4 mt-2 md:mt-0">
-        <a href="/help" class="text-xs uppercase tracking-widest text-slate-500 hover:text-blue-400 transition-colors">Help Center</a>
-        <a href="/terms" class="text-xs uppercase tracking-widest text-slate-500 hover:text-blue-400 transition-colors">Terms</a>
-      </div>
-    </div>
-  </footer>
+    <script type="module" src="js/api.js"></script>
+    <script type="module" src="js/ui.js"></script>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -729,3 +729,174 @@ function openDrawer(alert) {
     document.getElementById('details-drawer').classList.remove('translate-x-full');
     document.getElementById('drawer-overlay').classList.remove('hidden');
 }
+
+
+// js/ui.js
+import { fetchReports } from './api.js';
+
+export async function loadReports() {
+    try {
+        const data = await fetchReports();
+        document.getElementById('page-subtitle').textContent = 'Enterprise performance metrics and operational efficiency overview.';
+        renderKPIs(data.kpi);
+        renderEfficiencyChart(data.efficiency);
+        renderDelays(data.delays, data.kpi.delayed?.value);
+    } catch (error) {
+        console.error(error);
+        document.getElementById('page-subtitle').textContent = 'Failed to load data.';
+    }
+}
+
+function renderKPIs(kpi) {
+    const container = document.getElementById('kpi-grid');
+    if (!container || !kpi) return;
+
+    const cards = [
+        {
+            label: 'Distance Traveled',
+            icon: kpi.distance.icon || 'route',
+            value: `${kpi.distance.value} <span class="font-body-md text-body-md text-text-secondary ml-1">${kpi.distance.unit}</span>`,
+            trend: kpi.distance.trend,
+            trendUp: kpi.distance.trendUp,
+            trendColor: kpi.distance.trendUp ? 'status-green' : 'status-yellow',
+            trendIcon: kpi.distance.trendUp ? 'trending_up' : 'trending_flat',
+            cols: 'col-span-12 md:col-span-4 lg:col-span-2 xl:col-span-2',
+        },
+        {
+            label: 'Fuel Consumption',
+            icon: kpi.fuel.icon || 'local_gas_station',
+            value: `${kpi.fuel.value} <span class="font-body-md text-body-md text-text-secondary ml-1">${kpi.fuel.unit}</span>`,
+            trend: kpi.fuel.trend,
+            trendUp: kpi.fuel.trendUp,
+            trendColor: kpi.fuel.trendUp ? 'status-green' : 'status-yellow',
+            trendIcon: kpi.fuel.trendUp ? 'trending_up' : 'trending_flat',
+            cols: 'col-span-12 md:col-span-4 lg:col-span-2 xl:col-span-2',
+        },
+        {
+            label: 'Delivery Success',
+            icon: kpi.successRate.icon || 'check_circle',
+            value: `${kpi.successRate.value}%`,
+            trend: '',
+            trendUp: false,
+            trendColor: '',
+            trendIcon: '',
+            cols: 'col-span-12 md:col-span-4 lg:col-span-3 xl:col-span-3',
+            hasProgress: true,
+            progressValue: kpi.successRate.value,
+        },
+        {
+            label: 'Delayed',
+            icon: kpi.delayed.icon || 'warning',
+            value: kpi.delayed.value,
+            trend: kpi.delayed.trend,
+            trendUp: kpi.delayed.trendUp,
+            trendColor: kpi.delayed.trendColor || 'status-red',
+            trendIcon: kpi.delayed.trendUp ? 'trending_up' : 'trending_down',
+            cols: 'col-span-12 md:col-span-6 lg:col-span-2 xl:col-span-2',
+        },
+        {
+            label: 'Vehicle Uptime',
+            icon: kpi.uptime.icon || 'speed',
+            value: `${kpi.uptime.value}%`,
+            trend: 'Fleet Average',
+            trendUp: false,
+            trendColor: '',
+            trendIcon: '',
+            cols: 'col-span-12 md:col-span-6 lg:col-span-3 xl:col-span-3',
+            hasSparkline: true,
+            sparklineData: kpi.uptime.sparkline || [40,60,80,95,100],
+        },
+    ];
+
+    container.innerHTML = cards.map(card => `
+        <div class="${card.cols} bg-surface-container border border-border-subtle rounded-xl p-5 data-card flex flex-col justify-between h-[140px] ${card.label === 'Delivery Success' ? 'relative overflow-hidden' : ''}">
+            ${card.label === 'Delivery Success' ? '<div class="absolute right-0 top-0 w-32 h-32 bg-primary-container/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>' : ''}
+            <div class="flex justify-between items-start relative z-10">
+                <span class="font-label-md text-label-md text-text-secondary uppercase tracking-wider">${card.label}</span>
+                <span class="material-symbols-outlined text-text-secondary text-[20px]">${card.icon}</span>
+            </div>
+            <div class="relative z-10">
+                <div class="font-headline-xl text-headline-xl text-text-primary tracking-tight">${card.value}</div>
+                ${card.hasProgress ? `
+                    <div class="w-full bg-surface-bright h-1.5 rounded-full mt-3 overflow-hidden">
+                        <div class="bg-status-green h-full rounded-full" style="width: ${card.progressValue}%"></div>
+                    </div>` : ''}
+                ${card.trend ? `
+                    <div class="flex items-center gap-1 mt-1 ${card.trendColor ? 'text-'+card.trendColor : 'text-text-secondary'} font-label-md text-label-md">
+                        ${card.trendIcon ? `<span class="material-symbols-outlined text-[14px]">${card.trendIcon}</span>` : ''}
+                        <span>${card.trend}</span>
+                    </div>` : ''}
+                ${card.hasSparkline ? `
+                    <div class="flex items-end justify-between mt-2">
+                        <div class="font-body-md text-body-md text-text-secondary">Fleet Average</div>
+                        <div class="h-10 w-24 flex items-end gap-1">
+                            ${card.sparklineData.map((h, i) => `<div class="w-full bg-primary/20 rounded-t-sm" style="height: ${h}%"></div>`).join('')}
+                        </div>
+                    </div>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderEfficiencyChart(efficiency) {
+    if (!efficiency) return;
+    const { labels, distance, fuel } = efficiency;
+    const container = document.getElementById('efficiency-chart-container');
+    const labelsContainer = document.getElementById('efficiency-labels');
+    if (!container || !labelsContainer) return;
+
+    // Normalize values to percentages for SVG (0-100 range)
+    const allValues = [...distance, ...fuel];
+    const maxVal = Math.max(...allValues, 1);
+    const normalizedDistance = distance.map(v => 100 - (v / maxVal) * 100);
+    const normalizedFuel = fuel.map(v => 100 - (v / maxVal) * 100);
+
+    // Build SVG
+    const width = 100;
+    const height = 100;
+    const step = width / (labels.length - 1);
+
+    const createPath = (data) => {
+        const points = data.map((y, i) => `${(i * step).toFixed(1)},${y.toFixed(1)}`);
+        return `M${points.join(' L')}`;
+    };
+
+    container.innerHTML = `
+        <svg class="absolute inset-0 h-full w-full" preserveAspectRatio="none" viewBox="0 0 ${width} ${height}">
+            <defs>
+                <linearGradient id="gradientPrimary" x1="0%" x2="0%" y1="0%" y2="100%">
+                    <stop offset="0%" stop-color="#2e5bff" stop-opacity="0.3"></stop>
+                    <stop offset="100%" stop-color="#2e5bff" stop-opacity="0"></stop>
+                </linearGradient>
+            </defs>
+            <!-- Fuel Line (Yellow) -->
+            <path d="${createPath(normalizedFuel)}" fill="none" stroke="#F59E0B" stroke-linecap="round" stroke-width="2"></path>
+            <!-- Distance Area (Blue) -->
+            <path d="${createPath(normalizedDistance)} L${width},${height} L0,${height} Z" fill="url(#gradientPrimary)"></path>
+            <path d="${createPath(normalizedDistance)}" fill="none" stroke="#2e5bff" stroke-linecap="round" stroke-width="3"></path>
+        </svg>
+    `;
+    labelsContainer.innerHTML = labels.map(l => `<span>${l}</span>`).join('');
+}
+
+function renderDelays(delays, totalDelayed) {
+    const container = document.getElementById('delay-causes-container');
+    const countEl = document.getElementById('delayed-count');
+    if (!container || !delays) return;
+
+    if (countEl && totalDelayed !== undefined) {
+        countEl.textContent = `Breakdown of ${totalDelayed} delayed shipments`;
+    }
+
+    container.innerHTML = delays.map(d => `
+        <div>
+            <div class="flex justify-between items-center mb-2 font-body-md text-body-md">
+                <span class="text-text-primary flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-${d.color}"></span>${d.label}</span>
+                <span class="font-mono-data text-text-secondary">${d.percentage}%</span>
+            </div>
+            <div class="w-full bg-surface-bright h-2 rounded-full overflow-hidden">
+                <div class="bg-${d.color} h-full rounded-full" style="width: ${d.percentage}%"></div>
+            </div>
+        </div>
+    `).join('');
+}
