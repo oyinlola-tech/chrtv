@@ -1,9 +1,11 @@
 const express = require('express');
 const dataAggregator = require('../services/dataAggregator');
 const { createHttpClient } = require('../../../shared/http');
+const { getInternalServiceUrl } = require('../../../shared/internalServices');
 
 const client = createHttpClient();
 const router = express.Router();
+const trackingBase = getInternalServiceUrl('TRACKING_SERVICE_URL');
 
 router.get('/stats', async (_req, res) => {
   try {
@@ -15,18 +17,15 @@ router.get('/stats', async (_req, res) => {
 });
 
 router.get('/positions', async (req, res) => {
-  const base = process.env.TRACKING_SERVICE_URL || 'http://localhost:3001';
-  const response = await client.get(`${base}/positions/recent`, {
+  const response = await client.get(`${trackingBase}/positions/recent`, {
     params: { limit: req.query.limit || 100 },
   });
   res.json(response.data);
 });
 
 router.get('/events', async (_req, res) => {
-  const base = process.env.TRACKING_SERVICE_URL || 'http://localhost:3001';
-  const response = await client.get(`${base}/events/recent`);
+  const response = await client.get(`${trackingBase}/events/recent`);
   res.json(response.data);
 });
 
 module.exports = router;
-

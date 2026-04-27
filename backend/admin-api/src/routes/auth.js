@@ -2,8 +2,11 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { query } = require('../../../shared/db');
 const { signUser, verifyToken } = require('../../../shared/jwt');
+const { createRateLimiter } = require('../middleware/rateLimit');
 
 const router = express.Router();
+const authReadRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 60 });
+const bootstrapRateLimit = createRateLimiter({ windowMs: 60 * 60 * 1000, max: 5 });
 
 router.post('/login', async (req, res) => {
   const { username, password } = req.body || {};
@@ -33,7 +36,7 @@ router.post('/login', async (req, res) => {
   });
 });
 
-router.post('/bootstrap', async (req, res) => {
+router.post('/bootstrap', bootstrapRateLimit, async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) {
     return res.status(400).json({ error: 'username and password are required' });
@@ -53,7 +56,7 @@ router.post('/bootstrap', async (req, res) => {
   return res.status(201).json({ ok: true });
 });
 
-router.get('/me', (req, res) => {
+router.get('/me', authReadRateLimit, (req, res) => {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) {

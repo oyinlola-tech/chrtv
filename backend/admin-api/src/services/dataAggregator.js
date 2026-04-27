@@ -1,12 +1,13 @@
 const { createHttpClient } = require('../../../shared/http');
+const { getInternalServiceUrl } = require('../../../shared/internalServices');
 
 const client = createHttpClient();
 
 async function getStats() {
-  const trackingBase = process.env.TRACKING_SERVICE_URL || 'http://localhost:3001';
-  const assetBase = process.env.ASSET_SERVICE_URL || 'http://localhost:3002';
-  const deviceBase = process.env.DEVICE_GATEWAY_URL || 'http://localhost:5001';
-  const integrationBase = process.env.INTEGRATION_SERVICE_URL || 'http://localhost:3003';
+  const trackingBase = getInternalServiceUrl('TRACKING_SERVICE_URL');
+  const assetBase = getInternalServiceUrl('ASSET_SERVICE_URL');
+  const deviceBase = getInternalServiceUrl('DEVICE_GATEWAY_URL');
+  const integrationBase = getInternalServiceUrl('INTEGRATION_SERVICE_URL');
 
   const [positionsRes, eventsRes, ordersRes, assignmentsRes, devicesRes, configRes] = await Promise.all([
     client.get(`${trackingBase}/positions/latest`),

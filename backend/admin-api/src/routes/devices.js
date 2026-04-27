@@ -1,9 +1,10 @@
 const express = require('express');
 const { createHttpClient } = require('../../../shared/http');
+const { getInternalServiceUrl } = require('../../../shared/internalServices');
 
 const client = createHttpClient();
 const router = express.Router();
-const base = process.env.DEVICE_GATEWAY_URL || 'http://localhost:5001';
+const base = getInternalServiceUrl('DEVICE_GATEWAY_URL');
 
 router.get('/', async (_req, res) => {
   const response = await client.get(`${base}/devices`);
