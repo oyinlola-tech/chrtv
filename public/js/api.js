@@ -1,63 +1,68 @@
-// js/api.js
-const BASE_URL = 'http://localhost:3000/api';
+const TOKEN_KEY = 'chrtv_token';
+const USER_KEY = 'chrtv_user';
 
-export async function fetchFleet() {
-    const res = await fetch(`${BASE_URL}/fleet`);
-    if (!res.ok) throw new Error(`Fleet fetch failed: ${res.status}`);
-    return res.json();
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
 }
 
-export async function fetchVehicle(id) {
-    const res = await fetch(`${BASE_URL}/vehicle/${encodeURIComponent(id)}`);
-    if (!res.ok) throw new Error(`Vehicle fetch failed: ${res.status}`);
-    return res.json();
+export function setSession(session) {
+  localStorage.setItem(TOKEN_KEY, session.token);
+  localStorage.setItem(USER_KEY, JSON.stringify(session.user));
 }
 
-export async function sendCommand(vehicleId, command) {
-    const res = await fetch(`${BASE_URL}/command`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vehicleId, command })
-    });
-    return res.ok;
+export function clearSession() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
 }
 
-export async function fetchDashboard() {
-  const res = await fetch(`${BASE_URL}/dashboard`);
-  if (!res.ok) throw new Error(`Dashboard fetch failed: ${res.status}`);
-  return res.json();
+export function getUser() {
+  const raw = localStorage.getItem(USER_KEY);
+  return raw ? JSON.parse(raw) : null;
 }
 
-export async function fetchFleet(page = 1, limit = 10) {
-    const res = await fetch(`${BASE_URL}/fleet?page=${page}&limit=${limit}`);
-    if (!res.ok) throw new Error(`Fleet fetch failed: ${res.status}`);
-    return res.json();
+export async function request(path, options = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
+  };
+  const token = getToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(path, {
+    ...options,
+    headers,
+  });
+
+  const isJson = response.headers.get('content-type')?.includes('application/json');
+  const payload = isJson ? await response.json() : await response.text();
+
+  if (!response.ok) {
+    throw new Error(payload.error || payload.message || 'Request failed');
+  }
+
+  return payload;
 }
 
-export async function fetchShipments() {
-    const res = await fetch(`${BASE_URL}/shipments`);
-    if (!res.ok) throw new Error(`Shipments fetch failed: ${res.status}`);
-    return res.json();
-}
-
-export async function fetchAlertStats() {
-    const res = await fetch(`${BASE_URL}/alert-stats`);
-    if (!res.ok) throw new Error('Failed to fetch stats');
-    return res.json();
-}
-
-export async function fetchAlerts(severity = '', sort = '') {
-    const params = new URLSearchParams();
-    if (severity) params.append('severity', severity);
-    if (sort) params.append('sort', sort);
-    const res = await fetch(`${BASE_URL}/alerts?${params.toString()}`);
-    if (!res.ok) throw new Error('Failed to fetch alerts');
-    return res.json();
-}
-
-export async function fetchReports() {
-    const res = await fetch(`${BASE_URL}/reports`);
-    if (!res.ok) throw new Error('Failed to fetch reports');
-    return res.json();
-}
+export const api = {
+  login: (body) => request('/api/auth/login', { method: 'POST', body: JSON.stringify(body) }),
+  me: () => request('/api/auth/me'),
+  dashboardStats: () => request('/api/dashboard/stats'),
+  dashboardPositions: () => request('/api/dashboard/positions?limit=100'),
+  dashboardEvents: () => request('/api/dashboard/events'),
+  orders: () => request('/api/orders'),
+  createOrder: (body) => request('/api/orders', { method: 'POST', body: JSON.stringify(body) }),
+  facilities: () => request('/api/facilities'),
+  createFacility: (body) => request('/api/facilities', { method: 'POST', body: JSON.stringify(body) }),
+  assignments: () => request('/api/assignments'),
+  createAssignment: (body) => request('/api/assignments', { method: 'POST', body: JSON.stringify(body) }),
+  devices: () => request('/api/devices'),
+  sendDeviceCommand: (body) => request('/api/devices/command', { method: 'POST', body: JSON.stringify(body) }),
+  integrationConfig: () => request('/api/integration/config'),
+  updateIntegrationConfig: (body) => request('/api/integration/config', { method: 'PUT', body: JSON.stringify(body) }),
+  integrationLogs: () => request('/api/integration/logs'),
+  users: () => request('/api/users'),
+  createUser: (body) => request('/api/users', { method: 'POST', body: JSON.stringify(body) }),
+};
 

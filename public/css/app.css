@@ -1,0 +1,25 @@
+body {
+  background:
+    radial-gradient(circle at top right, rgba(249, 115, 22, 0.08), transparent 30%),
+    linear-gradient(180deg, #f8fafc, #eef3f8);
+}
+
+.field {
+  width: 100%;
+  border-radius: 1rem;
+  border: 1px solid #dbe3ee;
+  background: #f8fafc;
+  padding: 0.85rem 1rem;
+  outline: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.field:focus {
+  border-color: #0f4c81;
+  background: #ffffff;
+}
+
+.leaflet-container {
+  border-radius: 1.4rem;
+}
+
