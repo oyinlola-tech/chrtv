@@ -29,3 +29,16 @@ document.addEventListener('DOMContentLoaded', loadData);
 
 // Refresh every 30s (optional)
 setInterval(loadData, 30000);
+
+
+// js/main.js
+import { renderDashboard } from './ui.js';
+
+// Start on page load
+document.addEventListener('DOMContentLoaded', () => {
+  renderDashboard();
+});
+
+// Optional: Refresh every 60 seconds
+// setInterval(renderDashboard, 60000);
+

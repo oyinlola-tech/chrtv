@@ -21,3 +21,15 @@ export async function sendCommand(vehicleId, command) {
     });
     return res.ok;
 }
+
+export async function fetchDashboard() {
+  const res = await fetch(`${BASE_URL}/dashboard`);
+  if (!res.ok) throw new Error(`Dashboard fetch failed: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchFleet(page = 1, limit = 10) {
+    const res = await fetch(`${BASE_URL}/fleet?page=${page}&limit=${limit}`);
+    if (!res.ok) throw new Error(`Fleet fetch failed: ${res.status}`);
+    return res.json();
+}

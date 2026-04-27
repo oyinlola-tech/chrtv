@@ -62,3 +62,9 @@ export function renderMap(vehicles) {
         }
     });
 }
+
+import { loadFleetPage } from './ui.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadFleetPage(1);
+});
