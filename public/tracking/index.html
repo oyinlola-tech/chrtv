@@ -337,11 +337,11 @@
     </div>
 </main>
 
-<script type="module" src="js/api.js" defer></script>
-<script type="module" src="js/map.js" defer></script>
-<script type="module" src="/js/ui.js" defer></script>
-<script type="module" src="js/main.js" defer></script>
-<!-- Simple global functions for sidebar/drawer toggles (can be moved to ui.js if you prefer) -->
+<script type="module" src="../js/api.js" defer></script>
+<script type="module" src="../js/map.js" defer></script>
+<script type="module" src="../js/ui.js" defer></script>
+<script type="module" src="../js/main.js" defer></script>
+
 <script>
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('-translate-x-full');
@@ -352,7 +352,7 @@
         document.getElementById('sidebar-overlay').classList.add('hidden');
     }
     function toggleFilterPanel() {
-        // Mobile: collapse filter panel height (you can customise further)
+       
         const panel = document.getElementById('filter-panel');
         panel.classList.toggle('h-14');
     }
