@@ -32,6 +32,8 @@ All backend code now lives under [backend](/C:/Users/donri/Desktop/CH%20RTV%201/
 4. Initialize the database schema:
    - `npm run schema`
 5. Start services from `backend`:
+   - `npm start`
+   - or individually:
    - `npm run start:device-gateway`
    - `npm run start:tracking-service`
    - `npm run start:asset-service`
@@ -67,3 +69,16 @@ If the `users` table is empty, create the first admin with:
 - CMA-CGM outbound payloads follow the fields shown in the provided presentation.
 - The external CMA-CGM endpoint paths are configurable rather than hardcoded because the presentation shows payload shapes but not fixed production URL paths.
 - Frontend routes are folder-based, so the app uses `/dashboard`, `/orders`, `/devices`, and similar clean URLs instead of `.html` paths.
+- The device gateway listens on TCP `5000` for COBAN trackers and HTTP `5001` for internal command/device APIs. A single process cannot safely host raw TCP and Express HTTP on the same port.
+- A local `.env` has been created for this workspace. Review `JWT_SECRET`, DB credentials, and CMA-CGM Option 1 config before production use.
+
+## Verification
+
+- `npm install` completed successfully in `backend/`
+- `npm audit --omit=dev` returned `0 vulnerabilities`
+- Health endpoints verified locally:
+  - `admin-api` on `4000`
+  - `device-gateway` HTTP API on `5001`
+  - `tracking-service` on `3001`
+  - `asset-service` on `3002`
+- `integration-service` did not start because MySQL is not currently listening on `127.0.0.1:3306` in this machine
