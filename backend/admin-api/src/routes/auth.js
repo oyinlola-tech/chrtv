@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { query } = require('../../../shared/db');
 const { getRequiredEnv } = require('../../../shared/env');
 const { signUser, verifyToken } = require('../../../shared/jwt');
@@ -14,8 +15,9 @@ const {
 const router = express.Router();
 const authReadRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 60 });
 const bootstrapRateLimit = createRateLimiter({ windowMs: 60 * 60 * 1000, max: 5 });
+const loginRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 15, skipSuccessfulRequests: true });
 
-router.post('/login', requireJsonObjectBody, validateCredentials, asyncHandler(async (req, res) => {
+router.post('/login', loginRateLimit, requireJsonObjectBody, validateCredentials, asyncHandler(async (req, res) => {
   const { username, password } = req.body;
   const users = await query('SELECT * FROM users WHERE username = ?', [username]);
   const user = users[0];
@@ -29,8 +31,10 @@ router.post('/login', requireJsonObjectBody, validateCredentials, asyncHandler(a
   }
 
   const token = signUser(user);
+  const csrfToken = crypto.randomBytes(32).toString('hex');
   return res.json({
     token,
+    csrfToken,
     user: {
       id: user.id,
       username: user.username,

@@ -1,18 +1,27 @@
 const TOKEN_KEY = 'chrtv_token';
 const USER_KEY = 'chrtv_user';
+const CSRF_KEY = 'chrtv_csrf';
 
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
 
+export function getCsrfToken() {
+  return sessionStorage.getItem(CSRF_KEY);
+}
+
 export function setSession(session) {
   localStorage.setItem(TOKEN_KEY, session.token);
   localStorage.setItem(USER_KEY, JSON.stringify(session.user));
+  if (session.csrfToken) {
+    sessionStorage.setItem(CSRF_KEY, session.csrfToken);
+  }
 }
 
 export function clearSession() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  sessionStorage.removeItem(CSRF_KEY);
 }
 
 export function getUser() {
@@ -45,6 +54,11 @@ export async function request(path, options = {}) {
     headers.Authorization = `Bearer ${token}`;
   }
 
+  const csrfToken = getCsrfToken();
+  if (csrfToken && options.method && ['POST', 'PUT', 'DELETE'].includes(options.method)) {
+    headers['X-CSRF-Token'] = csrfToken;
+  }
+
   const response = await fetch(path, {
     ...options,
     headers,
@@ -55,7 +69,8 @@ export async function request(path, options = {}) {
 
   if (!response.ok) {
     handleUnauthorized(response);
-    throw new Error(payload.error || payload.message || 'Request failed');
+    const errorMessage = typeof payload === 'object' ? (payload.error || payload.message) : payload;
+    throw new Error(errorMessage || `Request failed with status ${response.status}`);
   }
 
   return payload;
@@ -65,7 +80,7 @@ export const api = {
   login: (body) => request('/api/auth/login', { method: 'POST', body: JSON.stringify(body) }),
   me: () => request('/api/auth/me'),
   dashboardStats: () => request('/api/dashboard/stats'),
-  dashboardPositions: () => request('/api/dashboard/positions?limit=100'),
+  dashboardPositions: (limit = 100) => request(`/api/dashboard/positions?limit=${Math.min(limit, 500)}`),
   dashboardEvents: () => request('/api/dashboard/events'),
   orders: () => request('/api/orders'),
   createOrder: (body) => request('/api/orders', { method: 'POST', body: JSON.stringify(body) }),

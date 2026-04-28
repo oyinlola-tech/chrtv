@@ -3,6 +3,11 @@ const Position = require('../models/position');
 const positionStore = require('../services/positionStore');
 const geofenceEngine = require('../services/geofenceEngine');
 const eventDetector = require('../services/eventDetector');
+const {
+  applyServiceSecurity,
+  requireLoopback,
+  serviceErrorHandler,
+} = require('../../../shared/serviceSecurity');
 
 const router = express.Router();
 const ALLOWED_TYPES = new Set(['position', 'geofence', 'alarm', 'unknown']);
@@ -27,20 +32,36 @@ function hasUsableGps(payload) {
   );
 }
 
-router.post('/', async (req, res) => {
-  const payload = new Position(req.body || {});
-
-  if (!/^\d{15,20}$/.test(String(payload.imei || '')) || !payload.type) {
-    return res.status(400).json({ error: 'imei and type are required' });
+function validatePayload(payload) {
+  // Validate IMEI
+  if (!/^\d{15,20}$/.test(String(payload.imei || ''))) {
+    return { valid: false, error: 'imei must be 15-20 digits' };
   }
 
-  if (!ALLOWED_TYPES.has(payload.type)) {
-    return res.status(400).json({ error: 'Unsupported payload type' });
+  // Validate type
+  if (!payload.type || !ALLOWED_TYPES.has(payload.type)) {
+    return { valid: false, error: 'type is required and must be position, geofence, alarm, or unknown' };
   }
 
+  // Validate data object
   if (typeof payload.data !== 'object' || payload.data === null || Array.isArray(payload.data)) {
-    payload.data = {};
+    return { valid: false, error: 'data must be a JSON object' };
   }
+
+  return { valid: true };
+}
+
+router.post('/', requireLoopback, async (req, res) => {
+  if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+    return res.status(400).json({ error: 'Request body must be a JSON object' });
+  }
+
+  const validation = validatePayload(req.body);
+  if (!validation.valid) {
+    return res.status(400).json({ error: validation.error });
+  }
+
+  const payload = new Position(req.body);
 
   try {
     await positionStore.storePosition(payload);

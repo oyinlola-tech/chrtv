@@ -45,22 +45,41 @@ function validateConfigBody(body) {
 
     body.option1_api_base_url = parsed.origin;
   }
+
+  if (body.option1_auth_token != null && (typeof body.option1_auth_token !== 'string' || body.option1_auth_token.length > 1024)) {
+    const error = new Error('option1_auth_token must be a string up to 1024 characters');
+    error.status = 400;
+    throw error;
+  }
 }
 
 router.get('/', async (_req, res) => {
-  const config = await configModel.ensureRow();
-  res.json({ config });
+  try {
+    const config = await configModel.ensureRow();
+    res.json({ config });
+  } catch (error) {
+    console.error('get config failed', error);
+    res.status(500).json({ error: 'Failed to retrieve config' });
+  }
 });
 
 router.put('/', async (req, res) => {
-  validateConfigBody(req.body);
-  const merged = {
-    ...(await configModel.ensureRow()),
-    ...req.body,
-  };
-  const config = await configModel.updateConfig(merged);
-  throttleManager.start(config.option1_coordinates_interval_seconds);
-  res.json({ config });
+  try {
+    validateConfigBody(req.body);
+    const merged = {
+      ...(await configModel.ensureRow()),
+      ...req.body,
+    };
+    const config = await configModel.updateConfig(merged);
+    throttleManager.start(config.option1_coordinates_interval_seconds);
+    res.json({ config });
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ error: error.message });
+    }
+    console.error('update config failed', error);
+    res.status(500).json({ error: 'Failed to update config' });
+  }
 });
 
 module.exports = router;

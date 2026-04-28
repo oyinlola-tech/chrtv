@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node scripts/start-all.js",
     "schema": "node database/schema.js",
+    "seed": "node scripts/seed.js",
     "start": "node scripts/start-all.js",
     "start:device-gateway": "node device-gateway/server.js",
     "start:tracking-service": "node tracking-service/server.js",
@@ -20,6 +21,7 @@
     "axios": "^1.15.2",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
+    "crypto": "^1.0.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.4.1",

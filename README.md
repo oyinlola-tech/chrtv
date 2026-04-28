@@ -2,6 +2,14 @@
 
 Carrier Haulage Real-Time Visibility platform for COBAN GPS trackers and CMA-CGM Option 1 direct API integration.
 
+## Quick Start
+
+**New to this project?** Start here:
+1. Read [SETUP.md](SETUP.md) for installation and configuration
+2. Review [AUDIT_REPORT.md](AUDIT_REPORT.md) for improvements and security enhancements
+3. Run `npm install && npm run schema && npm run seed && npm run dev`
+4. Open http://localhost:4000
+
 ## Overview
 
 This repository contains:
@@ -10,6 +18,7 @@ This repository contains:
 - a MySQL schema bootstrap in JavaScript
 - an admin frontend built with HTML, Tailwind CSS, and vanilla JavaScript
 - clean frontend routes such as `/dashboard`, `/tracking`, `/shipments`, `/devices`, and `/settings`
+- comprehensive TCP socket handling for COBAN device integration
 
 ## Architecture
 
@@ -30,74 +39,203 @@ Services in the platform:
 
 ```text
 CH RTV 1/
-+-- .env
-+-- .env.example
-+-- .gitignore
-+-- README.md
++-- .env                       # Configuration (create from .env.example)
++-- .env.example               # Example environment variables
++-- README.md                  # This file
++-- SETUP.md                   # Complete setup & deployment guide
++-- AUDIT_REPORT.md           # Security & improvements audit
++-- package.json               # Backend dependencies
 +-- backend/
 |   +-- package.json
-|   +-- package-lock.json
-|   +-- admin-api/
-|   |   +-- server.js
-|   |   \-- src/
-|   |       +-- middleware/
-|   |       +-- routes/
-|   |       \-- services/
-|   +-- asset-service/
-|   |   +-- server.js
-|   |   \-- src/
-|   |       +-- models/
-|   |       +-- routes/
-|   |       \-- services/
+|   +-- admin-api/             # Admin API server (port 4000)
+|   +-- asset-service/         # Orders, facilities, assignments (port 3002)
 |   +-- database/
-|   |   \-- schema.js
-|   +-- device-gateway/
-|   |   +-- server.js
-|   |   \-- src/
-|   |       +-- routes/
-|   |       +-- utils/
-|   |       +-- commandSender.js
-|   |       +-- deviceManager.js
-|   |       +-- deviceProtocol.js
-|   |       +-- eventPublisher.js
-|   |       \-- tcpServer.js
-|   +-- docs/
-|   |   +-- openapi.js
-|   |   \-- openapi.json
-|   +-- integration-service/
-|   |   +-- server.js
-|   |   \-- src/
-|   |       +-- models/
-|   |       +-- routes/
-|   |       +-- services/
-|   |       \-- utils/
+|   |   \-- schema.js          # MySQL schema initialization
+|   +-- device-gateway/        # TCP socket listener (port 5000)
+|   +-- integration-service/   # CMA-CGM integration (port 3003)
 |   +-- scripts/
-|   |   +-- generate-swagger.js
-|   |   \-- start-all.js
-|   +-- shared/
-|   |   +-- db.js
-|   |   +-- env.js
-|   |   +-- http.js
-|   |   +-- internalServices.js
-|   |   +-- jwt.js
-|   |   \-- serviceSecurity.js
-|   \-- tests/
-|       \-- deviceProtocol.test.js
-|   \-- tracking-service/
-|       +-- server.js
-|       \-- src/
-|           +-- models/
-|           +-- routes/
-|           +-- services/
-|           \-- utils/
+|   |   +-- start-all.js       # Start all services
+|   |   +-- seed.js            # Load test data
+|   |   \-- generate-swagger.js
+|   +-- shared/                # Shared utilities
+|   +-- tests/
+|   \-- tracking-service/      # Position tracking (port 3001)
 +-- docs/
-|   +-- api-spec.md
-|   \-- architecture.md
-\-- public/
-    +-- assets/
+|   +-- api-spec.md            # API specification
+|   \-- architecture.md        # Architecture details
+\-- public/                    # Frontend (served by admin-api)
     +-- auth/
-    |   \-- login/
-    |       \-- index.html
+    +-- dashboard/
+    +-- devices/
+    +-- facilities/
+    +-- integration/
+    +-- js/
+    |   +-- api.js             # API client wrapper
+    |   +-- main.js            # Page routing and initialization
+    |   +-- map.js             # Map integration (Leaflet)
+    |   +-- ui.js              # UI helpers
+    \-- css/
+        \-- app.css
+```
+
+## Getting Started
+
+### Prerequisites
+- Node.js 16+
+- MySQL 5.7+
+- npm or yarn
+
+### Installation
+
+```bash
+# Install dependencies
+npm install
+
+# Create .env file from example
+cp .env.example .env
+
+# Initialize database schema
+npm run schema
+
+# Load seed data (optional, for testing)
+npm run seed
+
+# Start all services
+npm run dev
+```
+
+### Access the Dashboard
+- URL: http://localhost:4000
+- Default user: admin / change-me-now (from INITIAL_ADMIN_PASSWORD in .env)
+
+## Available Scripts
+
+```bash
+npm run dev                 # Start all services
+npm run schema             # Initialize database
+npm run seed               # Load test data
+npm run start:admin-api    # Start admin API only
+npm run start:device-gateway
+npm run start:tracking-service
+npm run start:asset-service
+npm run start:integration-service
+npm run check              # Syntax check all JavaScript files
+npm run security:audit     # Run npm security audit
+```
+
+## Key Features
+
+- **Real-time Device Tracking:** Live GPS position updates from COBAN devices
+- **Geofence Management:** Create facilities and monitor entry/exit events
+- **Transport Orders:** Manage orders with multi-facility sequences
+- **Device Assignments:** Bind devices to orders and provision geofences
+- **Integration Toggle:** Switch between CMA-CGM Option 1 and Option 2
+- **Web Dashboard:** Responsive admin interface with maps and analytics
+- **Secure Authentication:** JWT-based with password hashing
+
+## Security Features
+
+- Input validation on all endpoints
+- SQL injection prevention via parameterized queries
+- XSS protection via HTML escaping
+- CSRF token support
+- Rate limiting on critical endpoints
+- Helmet.js security headers
+- Loopback-only internal service APIs
+- Password hashing with bcryptjs
+
+## Documentation
+
+- **[SETUP.md](SETUP.md)** - Complete setup, configuration, and deployment guide
+- **[AUDIT_REPORT.md](AUDIT_REPORT.md)** - Security audit and improvements summary
+- **[docs/architecture.md](docs/architecture.md)** - System architecture details
+- **[docs/api-spec.md](docs/api-spec.md)** - API specification
+- **API Docs:** http://localhost:4000/api/docs (when running)
+
+## Development
+
+### Database Initialization
+The database schema initializes automatically on first service start. To manually initialize:
+```bash
+npm run schema
+```
+
+### Load Test Data
+To populate the database with sample facilities, orders, and devices:
+```bash
+npm run seed
+```
+
+### Syntax Checking
+```bash
+npm run check
+```
+
+### Security Audit
+```bash
+npm run security:audit
+```
+
+## Troubleshooting
+
+### Port Already in Use
+Change port in .env:
+```env
+DGW_PORT=5001        # or any available port
+AA_PORT=4001
+```
+
+### Database Connection Failed
+Ensure MySQL is running and credentials in .env are correct:
+```env
+DB_HOST=127.0.0.1
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=rtv_platform
+```
+
+### CORS Errors
+Update ALLOWED_ORIGIN in .env to match your frontend URL:
+```env
+ALLOWED_ORIGIN=http://localhost:4000
+```
+
+### Device Not Connecting
+1. Verify TCP listener is running: `netstat -an | grep 5000`
+2. Check firewall allows port 5000
+3. Verify device is configured to connect to correct IP/port
+
+## Performance
+
+- TCP socket keep-alive: 30 seconds
+- Socket timeout: 120 seconds
+- Max connections: 5,000 (configurable)
+- Database connection pool: 10 (configurable)
+- Rate limiting: Configurable per endpoint
+- Request size limit: 1 MB
+
+## Production Considerations
+
+For production deployment, see the "Security Considerations" section in [SETUP.md](SETUP.md).
+
+Key points:
+- Change default admin password
+- Generate strong JWT_SECRET
+- Enable HTTPS/SSL
+- Configure database backups
+- Set up monitoring and logging
+- Review rate limiting settings
+- Enable application-level logging
+
+## Support & Issues
+
+For detailed setup, deployment, and troubleshooting guidance, please refer to:
+- [SETUP.md](SETUP.md) - Complete setup guide
+- [AUDIT_REPORT.md](AUDIT_REPORT.md) - Security audit and improvements
+
+## License
+
+Proprietary - Carrier Haulage Real Time Visibility Platform
     +-- alerts/
     |   \-- index.html
     +-- geofences/
