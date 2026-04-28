@@ -22,7 +22,8 @@ See [LICENSE.md](LICENSE.md) for full legal terms and [NOTICE.md](NOTICE.md) for
 2. Review [SECURITY.md](SECURITY.md) before testing, sharing, or deploying.
 3. Review [AUDIT_REPORT.md](AUDIT_REPORT.md) for the current hardening and audit summary.
 4. Run `npm install`, `npm run schema`, `npm run seed`, and `npm run dev` from the repository root.
-5. Open `http://localhost:4000`.
+5. If AMPPS MySQL is on Windows, use `DB_HOST=127.0.0.1` in `.env` instead of `localhost`.
+6. Open `http://localhost:4000`.
 
 ## Overview
 

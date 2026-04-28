@@ -1,75 +1,20 @@
 #!/usr/bin/env node
 
-/**
- * Seed Script for CH RTV Platform
- * Populates database with test data for localhost development
- * 
- * Usage: node backend/scripts/seed.js
- */
-
-const { query } = require('../shared/db');
 const bcrypt = require('bcryptjs');
+const { query } = require('../shared/db');
+const { formatError } = require('../shared/errorFormatting');
 const { loadEnv } = require('../shared/env');
 
 loadEnv();
 
 const FACILITIES = [
-  {
-    name: 'Port of Singapore',
-    type: 'POTE',
-    code: 'SGSIN',
-    lat: 1.3521,
-    lng: 103.8198,
-    radius: 2000,
-  },
-  {
-    name: 'Port of Rotterdam',
-    type: 'POTE',
-    code: 'NLRTM',
-    lat: 51.9544,
-    lng: 4.1694,
-    radius: 2000,
-  },
-  {
-    name: 'Bangkok Port',
-    type: 'POTE',
-    code: 'THBKK',
-    lat: 13.6345,
-    lng: 100.5896,
-    radius: 2000,
-  },
-  {
-    name: 'Hong Kong Port',
-    type: 'POTE',
-    code: 'HKHKG',
-    lat: 22.3193,
-    lng: 114.1694,
-    radius: 1500,
-  },
-  {
-    name: 'Dubai Depot',
-    type: 'DEPO',
-    code: 'AEDXB',
-    lat: 25.2048,
-    lng: 55.2708,
-    radius: 500,
-  },
-  {
-    name: 'Shanghai Warehouse',
-    type: 'CLOC',
-    code: 'CNSHA',
-    lat: 31.2304,
-    lng: 121.4737,
-    radius: 500,
-  },
-  {
-    name: 'Kuala Lumpur Ramp',
-    type: 'RAMP',
-    code: 'MYKUL',
-    lat: 3.1390,
-    lng: 101.6869,
-    radius: 300,
-  },
+  { name: 'Port of Singapore', type: 'POTE', code: 'SGSIN', lat: 1.3521, lng: 103.8198, radius: 2000 },
+  { name: 'Port of Rotterdam', type: 'POTE', code: 'NLRTM', lat: 51.9544, lng: 4.1694, radius: 2000 },
+  { name: 'Bangkok Port', type: 'POTE', code: 'THBKK', lat: 13.6345, lng: 100.5896, radius: 2000 },
+  { name: 'Hong Kong Port', type: 'POTE', code: 'HKHKG', lat: 22.3193, lng: 114.1694, radius: 1500 },
+  { name: 'Dubai Depot', type: 'DEPO', code: 'AEDXB', lat: 25.2048, lng: 55.2708, radius: 500 },
+  { name: 'Shanghai Warehouse', type: 'CLOC', code: 'CNSHA', lat: 31.2304, lng: 121.4737, radius: 500 },
+  { name: 'Kuala Lumpur Ramp', type: 'RAMP', code: 'MYKUL', lat: 3.139, lng: 101.6869, radius: 300 },
 ];
 
 const ORDERS = [
@@ -80,7 +25,7 @@ const ORDERS = [
     transportation_phase: 'EXPORT',
     mode_of_transport: 'TRUCK',
     status: 'PLANNED',
-    facility_sequence: [1, 2], // Port of Singapore -> Port of Rotterdam
+    facility_codes: ['SGSIN', 'NLRTM'],
   },
   {
     order_number: 'ORD-2024-002',
@@ -89,7 +34,7 @@ const ORDERS = [
     transportation_phase: 'IMPORT',
     mode_of_transport: 'TRUCK',
     status: 'IN_PROGRESS',
-    facility_sequence: [3, 4], // Bangkok -> Hong Kong
+    facility_codes: ['THBKK', 'HKHKG'],
   },
   {
     order_number: 'ORD-2024-003',
@@ -98,13 +43,13 @@ const ORDERS = [
     transportation_phase: 'EXPORT',
     mode_of_transport: 'RAIL',
     status: 'PLANNED',
-    facility_sequence: [5, 6], // Dubai -> Shanghai
+    facility_codes: ['AEDXB', 'CNSHA'],
   },
 ];
 
 const ASSIGNMENTS = [
   {
-    transport_order_id: 1,
+    order_number: 'ORD-2024-001',
     imei: '123456789012345',
     license_plate: 'SG-100-ABC',
     originator_name: 'Carrier Asia',
@@ -112,7 +57,7 @@ const ASSIGNMENTS = [
     is_active: true,
   },
   {
-    transport_order_id: 2,
+    order_number: 'ORD-2024-002',
     imei: '234567890123456',
     license_plate: 'TH-200-XYZ',
     originator_name: 'Carrier Asia',
@@ -120,7 +65,7 @@ const ASSIGNMENTS = [
     is_active: true,
   },
   {
-    transport_order_id: 3,
+    order_number: 'ORD-2024-003',
     imei: '345678901234567',
     license_plate: 'AE-300-DEF',
     originator_name: 'Middle East Freight',
@@ -130,120 +75,164 @@ const ASSIGNMENTS = [
 ];
 
 const USERS = [
-  {
-    username: 'operator1',
-    password: 'operator@2024',
-    role: 'operator',
-  },
-  {
-    username: 'supervisor',
-    password: 'supervisor@2024',
-    role: 'admin',
-  },
+  { username: 'operator1', password: 'operator@2024', role: 'operator' },
+  { username: 'supervisor', password: 'supervisor@2024', role: 'admin' },
 ];
+
+const POSITIONS = [
+  { imei: '123456789012345', lat: 1.3521, lng: 103.8198 },
+  { imei: '234567890123456', lat: 13.6345, lng: 100.5896 },
+  { imei: '345678901234567', lat: 25.2048, lng: 55.2708 },
+];
+
+function logLine(message = '') {
+  console.log(message);
+}
+
+async function seedFacilities() {
+  const facilityIdsByCode = new Map();
+
+  for (const facility of FACILITIES) {
+    const result = await query(
+      `INSERT INTO facilities (name, facility_type_code, location_code, latitude, longitude, radius_meters)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [facility.name, facility.type, facility.code, facility.lat, facility.lng, facility.radius]
+    );
+    facilityIdsByCode.set(facility.code, result.insertId);
+    logLine(`  Created facility: ${facility.name}`);
+  }
+
+  return facilityIdsByCode;
+}
+
+async function seedOrders(facilityIdsByCode) {
+  const orderIdsByNumber = new Map();
+
+  for (const order of ORDERS) {
+    const result = await query(
+      `INSERT INTO transport_orders (order_number, carrier_booking_ref, equipment_reference, transportation_phase, mode_of_transport, status)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [order.order_number, order.carrier_booking_ref, order.equipment_reference, order.transportation_phase, order.mode_of_transport, order.status]
+    );
+
+    const orderId = result.insertId;
+    orderIdsByNumber.set(order.order_number, orderId);
+
+    for (const [index, code] of order.facility_codes.entries()) {
+      const facilityId = facilityIdsByCode.get(code);
+      if (!facilityId) {
+        throw new Error(`Unable to resolve facility code ${code} for order ${order.order_number}`);
+      }
+
+      await query(
+        `INSERT INTO order_facility_sequence (transport_order_id, facility_id, sequence_order)
+         VALUES (?, ?, ?)`,
+        [orderId, facilityId, index + 1]
+      );
+    }
+
+    logLine(`  Created order: ${order.order_number}`);
+  }
+
+  return orderIdsByNumber;
+}
+
+async function seedAssignments(orderIdsByNumber) {
+  for (const assignment of ASSIGNMENTS) {
+    const orderId = orderIdsByNumber.get(assignment.order_number);
+    if (!orderId) {
+      throw new Error(`Unable to resolve order ${assignment.order_number} for IMEI ${assignment.imei}`);
+    }
+
+    await query(
+      `INSERT INTO assignments (transport_order_id, imei, license_plate, originator_name, partner_name, is_active)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [orderId, assignment.imei, assignment.license_plate, assignment.originator_name, assignment.partner_name, assignment.is_active]
+    );
+
+    logLine(`  Created assignment: IMEI ${assignment.imei} -> License ${assignment.license_plate}`);
+  }
+}
+
+async function seedUsers() {
+  for (const user of USERS) {
+    const passwordHash = await bcrypt.hash(user.password, 10);
+    await query(
+      `INSERT INTO users (username, password_hash, role)
+       VALUES (?, ?, ?)`,
+      [user.username, passwordHash, user.role]
+    );
+    logLine(`  Created user: ${user.username} (${user.role})`);
+  }
+}
+
+async function upsertLatestPosition(position) {
+  await query(
+    `INSERT INTO latest_device_positions
+      (imei, utc_timestamp, latitude, longitude, speed, heading, gps_valid, acc_state, door_state, raw_message)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+      utc_timestamp = VALUES(utc_timestamp),
+      latitude = VALUES(latitude),
+      longitude = VALUES(longitude),
+      speed = VALUES(speed),
+      heading = VALUES(heading),
+      gps_valid = VALUES(gps_valid),
+      acc_state = VALUES(acc_state),
+      door_state = VALUES(door_state),
+      raw_message = VALUES(raw_message)`,
+    [position.imei, position.utcTimestamp, position.lat, position.lng, 0, 0, 1, 1, 0, 'seed-data']
+  );
+}
+
+async function seedPositions() {
+  for (const position of POSITIONS) {
+    const utcTimestamp = new Date();
+    await query(
+      `INSERT INTO device_positions (imei, utc_timestamp, latitude, longitude, speed, heading, gps_valid, acc_state, door_state)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [position.imei, utcTimestamp, position.lat, position.lng, 0, 0, true, true, false]
+    );
+    await upsertLatestPosition({ ...position, utcTimestamp });
+    logLine(`  Created position: IMEI ${position.imei}`);
+  }
+}
 
 async function seedDatabase() {
   try {
-    console.log('  Starting CH RTV Platform Database Seed...\n');
+    logLine('Starting CH RTV Platform database seed...\n');
 
-    // Check if already seeded
-    const [usersCount] = await query('SELECT COUNT(*) as count FROM users');
+    const [usersCount] = await query('SELECT COUNT(*) AS count FROM users');
     if (usersCount.count > 1) {
-      console.log('⚠️  Database already seeded. Skipping.');
+      logLine('Database already seeded. Skipping.');
       process.exit(0);
     }
 
-    // Seed Facilities
-    console.log('  Seeding facilities...');
-    const facilityIds = [];
-    for (const facility of FACILITIES) {
-      const result = await query(
-        `INSERT INTO facilities (name, facility_type_code, location_code, latitude, longitude, radius_meters)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [facility.name, facility.type, facility.code, facility.lat, facility.lng, facility.radius]
-      );
-      facilityIds.push(result.insertId || result[0]?.insertId);
-      console.log(`  ✓ Created facility: ${facility.name}`);
-    }
+    logLine('Seeding facilities...');
+    const facilityIdsByCode = await seedFacilities();
 
-    // Seed Orders
-    console.log('\n  Seeding transport orders...');
-    const orderIds = [];
-    for (let i = 0; i < ORDERS.length; i++) {
-      const order = ORDERS[i];
-      const result = await query(
-        `INSERT INTO transport_orders (order_number, carrier_booking_ref, equipment_reference, transportation_phase, mode_of_transport, status)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [order.order_number, order.carrier_booking_ref, order.equipment_reference, order.transportation_phase, order.mode_of_transport, order.status]
-      );
-      const orderId = result.insertId || result[0]?.insertId;
-      orderIds.push(orderId);
+    logLine('\nSeeding transport orders...');
+    const orderIdsByNumber = await seedOrders(facilityIdsByCode);
 
-      // Add facility sequences
-      if (order.facility_sequence) {
-        for (let seq = 0; seq < order.facility_sequence.length; seq++) {
-          await query(
-            `INSERT INTO order_facility_sequence (transport_order_id, facility_id, sequence_order)
-             VALUES (?, ?, ?)`,
-            [orderId, order.facility_sequence[seq], seq + 1]
-          );
-        }
-      }
+    logLine('\nSeeding device assignments...');
+    await seedAssignments(orderIdsByNumber);
 
-      console.log(`  ✓ Created order: ${order.order_number}`);
-    }
+    logLine('\nSeeding users...');
+    await seedUsers();
 
-    // Seed Assignments
-    console.log('\n  Seeding device assignments...');
-    for (const assignment of ASSIGNMENTS) {
-      await query(
-        `INSERT INTO assignments (transport_order_id, imei, license_plate, originator_name, partner_name, is_active)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [assignment.transport_order_id, assignment.imei, assignment.license_plate, assignment.originator_name, assignment.partner_name, assignment.is_active]
-      );
-      console.log(`  ✓ Created assignment: IMEI ${assignment.imei} -> License ${assignment.license_plate}`);
-    }
+    logLine('\nSeeding sample device positions...');
+    await seedPositions();
 
-    // Seed Test Users
-    console.log('\n  Seeding users...');
-    for (const user of USERS) {
-      const passwordHash = await bcrypt.hash(user.password, 10);
-      await query(
-        `INSERT INTO users (username, password_hash, role)
-         VALUES (?, ?, ?)`,
-        [user.username, passwordHash, user.role]
-      );
-      console.log(`  ✓ Created user: ${user.username} (${user.role})`);
-    }
-
-    // Seed Sample Positions
-    console.log('\n  Seeding sample device positions...');
-    const positions = [
-      { imei: '123456789012345', lat: 1.3521, lng: 103.8198 },
-      { imei: '234567890123456', lat: 13.6345, lng: 100.5896 },
-      { imei: '345678901234567', lat: 25.2048, lng: 55.2708 },
-    ];
-
-    for (const pos of positions) {
-      await query(
-        `INSERT INTO device_positions (imei, utc_timestamp, latitude, longitude, speed, heading, gps_valid, acc_state, door_state)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [pos.imei, new Date(), pos.lat, pos.lng, 0, 0, true, true, false]
-      );
-      console.log(`  ✓ Created position: IMEI ${pos.imei}`);
-    }
-
-    console.log('\n Database seed completed successfully!\n');
-    console.log('   Test Users:');
-    console.log('   Username: operator1 | Password: operator@2024 | Role: operator');
-    console.log('   Username: supervisor | Password: supervisor@2024 | Role: admin\n');
-    console.log('   Test Devices (IMEIs):');
-    console.log('   123456789012345 - Active, SG-100-ABC');
-    console.log('   234567890123456 - Active, TH-200-XYZ');
-    console.log('   345678901234567 - Inactive, AE-300-DEF\n');
-
+    logLine('\nDatabase seed completed successfully!\n');
+    logLine('Test users:');
+    logLine('  Username: operator1 | Password: operator@2024 | Role: operator');
+    logLine('  Username: supervisor | Password: supervisor@2024 | Role: admin\n');
+    logLine('Test devices (IMEIs):');
+    logLine('  123456789012345 - Active, SG-100-ABC');
+    logLine('  234567890123456 - Active, TH-200-XYZ');
+    logLine('  345678901234567 - Inactive, AE-300-DEF\n');
   } catch (error) {
-    console.error('\n  Seed failed:', error.message);
+    console.error('\nSeed failed:', formatError(error));
     process.exit(1);
   }
 }

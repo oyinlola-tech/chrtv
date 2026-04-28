@@ -9,8 +9,9 @@
 ## Localhost Run Flow
 
 1. Copy `.env.example` to `.env` if needed and set a strong `JWT_SECRET`.
-2. Start AMPPS MySQL before running schema or seed commands.
-3. From the repository root run:
+2. Prefer `DB_HOST=127.0.0.1` instead of `localhost` for AMPPS on Windows to avoid IPv6/hostname resolution issues.
+3. Start AMPPS MySQL before running schema or seed commands.
+4. From the repository root run:
 
 ```bash
 npm install
@@ -19,8 +20,8 @@ npm run seed
 npm run dev
 ```
 
-4. Open `http://localhost:4000`.
-5. Sign in with the initial admin from `.env`, or use the seeded users after `npm run seed`.
+5. Open `http://localhost:4000`.
+6. Sign in with the initial admin from `.env`, or use the seeded users after `npm run seed`.
 
 ## Default Ports
 
@@ -36,3 +37,4 @@ npm run dev
 - Internal microservice HTTP endpoints are loopback-only by design.
 - The integration service defaults to `option2` so localhost runs do not require an external CMA-CGM endpoint.
 - If schema or seed fails with `ECONNREFUSED 127.0.0.1:3306`, AMPPS MySQL is not running or is listening on a different port.
+- If schema or seed fails with `connect ECONNREFUSED ::1:3306`, switch `DB_HOST` from `localhost` to `127.0.0.1`.

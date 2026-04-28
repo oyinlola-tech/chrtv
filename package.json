@@ -11,6 +11,7 @@
     "seed": "npm run seed --prefix backend",
     "test": "npm run test --prefix backend",
     "check": "npm run check --prefix backend",
-    "security:audit": "npm run security:audit --prefix backend"
+    "security:audit": "npm run security:audit --prefix backend",
+    "swagger:generate": "npm run swagger:generate --prefix backend"
   }
 }

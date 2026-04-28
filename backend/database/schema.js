@@ -1,5 +1,6 @@
 const mysql = require('mysql2/promise');
 const { loadEnv } = require('../shared/env');
+const { formatError } = require('../shared/errorFormatting');
 
 loadEnv();
 
@@ -114,10 +115,24 @@ const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('admin','operator') DEFAULT 'operator',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_users_created (created_at)
+    INDEX idx_users_created (created_at),
+    INDEX idx_users_email (email)
+  )`,
+  `CREATE TABLE IF NOT EXISTS password_reset_otps (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    otp_hash CHAR(64) NOT NULL,
+    purpose ENUM('password_reset') DEFAULT 'password_reset',
+    expires_at DATETIME NOT NULL,
+    consumed_at DATETIME NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_password_reset_user_created (user_id, created_at),
+    INDEX idx_password_reset_expires (expires_at),
+    FOREIGN KEY (user_id) REFERENCES users(id)
   )`,
   `INSERT INTO integration_config (id, active_option, option1_coordinates_interval_seconds, option1_api_base_url, option1_auth_token, option2_settings_json)
    VALUES (1, 'option2', 600, '', '', '{}')
@@ -148,13 +163,13 @@ async function indexExists(connection, tableName, indexName) {
 
 async function ensureColumn(connection, tableName, columnName, definition) {
   if (!(await columnExists(connection, tableName, columnName))) {
-    await connection.execute(`ALTER TABLE \`${tableName}\` ADD COLUMN ${definition}`);
+    await connection.query(`ALTER TABLE \`${tableName}\` ADD COLUMN ${definition}`);
   }
 }
 
 async function ensureIndex(connection, tableName, indexName, definition) {
   if (!(await indexExists(connection, tableName, indexName))) {
-    await connection.execute(`ALTER TABLE \`${tableName}\` ADD ${definition}`);
+    await connection.query(`ALTER TABLE \`${tableName}\` ADD ${definition}`);
   }
 }
 
@@ -207,6 +222,47 @@ async function ensureSchemaCompatibility(connection) {
     'idx_users_created',
     'INDEX `idx_users_created` (`created_at`)'
   );
+  await ensureColumn(
+    connection,
+    'users',
+    'email',
+    '`email` VARCHAR(255) NULL'
+  );
+  await connection.query(
+    `UPDATE users
+     SET email = CONCAT(username, '@local.chrtv')
+     WHERE email IS NULL OR TRIM(email) = ''`
+  );
+  await ensureIndex(
+    connection,
+    'users',
+    'email',
+    'UNIQUE INDEX `email` (`email`)'
+  );
+  await ensureIndex(
+    connection,
+    'users',
+    'idx_users_email',
+    'INDEX `idx_users_email` (`email`)'
+  );
+  await connection.query(
+    `ALTER TABLE users
+     MODIFY COLUMN email VARCHAR(255) NOT NULL`
+  );
+  await connection.query(
+    `CREATE TABLE IF NOT EXISTS password_reset_otps (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      otp_hash CHAR(64) NOT NULL,
+      purpose ENUM('password_reset') DEFAULT 'password_reset',
+      expires_at DATETIME NOT NULL,
+      consumed_at DATETIME NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_password_reset_user_created (user_id, created_at),
+      INDEX idx_password_reset_expires (expires_at),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )`
+  );
 }
 
 async function runSchema() {
@@ -219,8 +275,11 @@ async function runSchema() {
   });
 
   try {
-    for (const statement of schemaStatements) {
-      await connection.execute(statement);
+    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``);
+    await connection.changeUser({ database: dbName });
+
+    for (const statement of schemaStatements.slice(2)) {
+      await connection.query(statement);
     }
     await ensureSchemaCompatibility(connection);
     console.log('Schema initialized successfully.');
@@ -231,7 +290,7 @@ async function runSchema() {
 
 if (require.main === module) {
   runSchema().catch((error) => {
-    console.error('Schema initialization failed:', error.message);
+    console.error('Schema initialization failed:', formatError(error));
     process.exit(1);
   });
 }

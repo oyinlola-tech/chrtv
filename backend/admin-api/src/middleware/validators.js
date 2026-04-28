@@ -70,20 +70,26 @@ function validateDashboardLimit(req, res, next) {
 
 function validateDeviceCommand(req, res, next) {
   const { imei, keyword, params } = req.body || {};
+  const normalizedKeyword = typeof keyword === 'string' ? keyword.trim() : '';
+  const normalizedParams = typeof params === 'string' ? params.trim() : params;
+
   if (!/^\d{15,20}$/.test(String(imei || ''))) {
     return badRequest(res, 'imei must be 15 to 20 digits');
   }
 
-  if (typeof keyword !== 'string' || keyword.trim().length === 0 || keyword.length > 100) {
-    return badRequest(res, 'keyword is required');
+  if (!/^[A-Za-z0-9]{1,20}$/.test(normalizedKeyword)) {
+    return badRequest(res, 'keyword must be 1-20 alphanumeric characters');
   }
 
-  if (params != null && (typeof params !== 'string' || params.length > 500)) {
-    return badRequest(res, 'params must be a string up to 500 characters');
+  if (
+    normalizedParams != null &&
+    (typeof normalizedParams !== 'string' || !/^[A-Za-z0-9,.:+\-_/ ]{0,500}$/.test(normalizedParams))
+  ) {
+    return badRequest(res, 'params contains unsupported characters');
   }
 
-  req.body.keyword = keyword.trim();
-  req.body.params = typeof params === 'string' ? params.trim() : params;
+  req.body.keyword = normalizedKeyword;
+  req.body.params = normalizedParams;
   return next();
 }
 
@@ -111,8 +117,27 @@ function validateIntegrationConfigUpdate(req, res, next) {
     return badRequest(res, 'option1_api_base_url must be a string up to 255 characters');
   }
 
+  if (baseUrl) {
+    let parsed;
+    try {
+      parsed = new URL(baseUrl);
+    } catch (_error) {
+      return badRequest(res, 'option1_api_base_url must be a valid absolute URL');
+    }
+
+    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) {
+      return badRequest(res, 'option1_api_base_url must use http or https and must not include credentials');
+    }
+
+    req.body.option1_api_base_url = parsed.origin;
+  }
+
   if (authToken != null && (typeof authToken !== 'string' || authToken.length > 1024)) {
     return badRequest(res, 'option1_auth_token must be a string up to 1024 characters');
+  }
+
+  if (activeOption === 'option1' && !req.body.option1_api_base_url && !baseUrl) {
+    return badRequest(res, 'option1_api_base_url is required when active_option is option1');
   }
 
   return next();
@@ -138,4 +163,3 @@ module.exports = {
   validateIntegrationConfigUpdate,
   requireLoopback,
 };
-
