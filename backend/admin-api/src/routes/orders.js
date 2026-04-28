@@ -27,7 +27,8 @@ router.put('/orders/:id', validateNumericIdParam(), requireJsonObjectBody, async
 }));
 
 router.delete('/orders/:id', validateNumericIdParam(), asyncHandler(async (req, res) => {
-  const response = await client.delete(`${base}/orders/${req.params.id}`);
+  const id = String(Number.parseInt(req.params.id, 10));
+  const response = await client.delete(`${base}/orders/${id}`);
   res.json(response.data);
 }));
 
