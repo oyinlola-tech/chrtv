@@ -7,45 +7,56 @@ const MAX_BUFFER_LENGTH = 16 * 1024;
 const MAX_FRAME_LENGTH = 2048;
 const HANDSHAKE_TIMEOUT = 10_000;
 
+function safeWrite(socket, payload) {
+  if (!socket.destroyed && socket.writable) {
+    socket.write(payload);
+  }
+}
+
+function setDeviceIdentity(socket, imei) {
+  deviceManager.setSocketImei(socket, imei);
+  deviceManager.ensureRegistered(imei, socket);
+}
+
 function handleFrame(frame, socket) {
   const trimmed = String(frame).trim();
   if (!trimmed) {
-    return;
+    return false;
   }
 
   if (trimmed.length > MAX_FRAME_LENGTH) {
     // Silently drop oversized frames
-    return;
+    return false;
   }
 
   // Login packet: ##,imei:XXXXXXXXXXXXXXX,A;
   if (/^##,imei:(\d{15}),A;?$/i.test(trimmed)) {
     const imei = trimmed.match(/imei:(\d{15})/i)[1];
-    deviceManager.setSocketImei(socket, imei);
-    deviceManager.register(imei, socket);
-    socket.write('LOAD\n');
-    return;
+    setDeviceIdentity(socket, imei);
+    safeWrite(socket, 'LOAD\n');
+    return true;
   }
 
   // Heartbeat: XXXXXXXXXXXXXXX
   if (/^\d{15}$/.test(trimmed)) {
-    deviceManager.setSocketImei(socket, trimmed);
-    deviceManager.touch(trimmed);
-    socket.write('ON\n');
-    return;
+    setDeviceIdentity(socket, trimmed);
+    safeWrite(socket, 'ON\n');
+    return true;
   }
 
   // Data packet: imei:...
   if (trimmed.startsWith('imei:')) {
     const parsed = deviceProtocol.parse(trimmed);
     if (parsed) {
-      deviceManager.setSocketImei(socket, parsed.imei);
-      deviceManager.touch(parsed.imei);
+      setDeviceIdentity(socket, parsed.imei);
       eventPublisher.publish(parsed).catch((error) => {
         console.error('Failed to publish device payload', error.message);
       });
+      return true;
     }
   }
+
+  return false;
 }
 
 function start() {
@@ -80,12 +91,10 @@ function start() {
       buffer = frames.pop() || '';
 
       frames.forEach((frame) => {
-        const trimmed = frame.trim();
-        if (trimmed && /imei:/.test(trimmed)) {
+        if (handleFrame(frame, socket)) {
           hasImei = true;
           clearTimeout(handshakeTimer);
         }
-        handleFrame(frame, socket);
       });
     });
 

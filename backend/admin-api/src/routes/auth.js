@@ -30,8 +30,8 @@ router.post('/login', loginRateLimit, requireJsonObjectBody, validateCredentials
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
-  const token = signUser(user);
   const csrfToken = crypto.randomBytes(32).toString('hex');
+  const token = signUser(user, csrfToken);
   return res.json({
     token,
     csrfToken,

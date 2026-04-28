@@ -1,12 +1,13 @@
 const jwt = require('jsonwebtoken');
 const { getRequiredEnv } = require('./env');
 
-function signUser(user) {
+function signUser(user, csrfToken) {
   return jwt.sign(
     {
       sub: user.id,
       username: user.username,
       role: user.role,
+      csrf: csrfToken,
     },
     getRequiredEnv('JWT_SECRET'),
     {

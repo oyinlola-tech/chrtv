@@ -75,7 +75,7 @@ const schemaStatements = [
   )`,
   `CREATE TABLE IF NOT EXISTS integration_config (
     id INT PRIMARY KEY DEFAULT 1,
-    active_option ENUM('option1','option2') DEFAULT 'option1',
+    active_option ENUM('option1','option2') DEFAULT 'option2',
     option1_coordinates_interval_seconds INT DEFAULT 600,
     option1_api_base_url VARCHAR(255),
     option1_auth_token VARCHAR(255),
@@ -100,7 +100,7 @@ const schemaStatements = [
     INDEX idx_users_created (created_at)
   )`,
   `INSERT INTO integration_config (id, active_option, option1_coordinates_interval_seconds, option1_api_base_url, option1_auth_token, option2_settings_json)
-   VALUES (1, 'option1', 600, '', '', '{}')
+   VALUES (1, 'option2', 600, '', '', '{}')
    ON DUPLICATE KEY UPDATE id = id`
 ];
 

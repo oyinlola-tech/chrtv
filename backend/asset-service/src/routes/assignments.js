@@ -43,10 +43,10 @@ router.post('/', async (req, res) => {
   try {
     validateAssignmentBody(req.body);
     const assignment = await assignmentModel.createAssignment(req.body);
-    await geofenceConfig.sendToDevice(assignment.id);
-    res.status(201).json({ assignment });
+    const provisioning = await geofenceConfig.sendToDevice(assignment.id);
+    res.status(201).json({ assignment, provisioning });
   } catch (error) {
-    res.status(error.status || 400).json({ error: error.message });
+    res.status(error.status || 500).json({ error: error.message });
   }
 });
 
@@ -59,7 +59,7 @@ router.put('/:id', async (req, res) => {
     const assignment = await assignmentModel.updateAssignment(Number(req.params.id), req.body);
     res.json({ assignment });
   } catch (error) {
-    res.status(error.status || 400).json({ error: error.message });
+    res.status(error.status || 500).json({ error: error.message });
   }
 });
 

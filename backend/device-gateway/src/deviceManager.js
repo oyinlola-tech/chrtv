@@ -14,6 +14,16 @@ function register(imei, socket) {
   });
 }
 
+function ensureRegistered(imei, socket) {
+  const existing = devices.get(imei);
+  if (!existing || existing.socket !== socket) {
+    register(imei, socket);
+    return;
+  }
+
+  existing.lastSeenAt = new Date();
+}
+
 function touch(imei) {
   const device = devices.get(imei);
   if (device) {
@@ -54,6 +64,7 @@ function listDevices() {
 
 module.exports = {
   register,
+  ensureRegistered,
   touch,
   setSocketImei,
   unregisterBySocket,
