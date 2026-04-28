@@ -76,6 +76,111 @@ export async function request(path, options = {}) {
   return payload;
 }
 
+async function streamSse(path, { signal, onEvent }) {
+  const headers = {
+    Accept: 'text/event-stream',
+  };
+  const token = getToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(path, {
+    method: 'GET',
+    headers,
+    signal,
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    handleUnauthorized(response);
+    throw new Error(`Stream failed with status ${response.status}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) {
+      break;
+    }
+
+    buffer += decoder.decode(value, { stream: true });
+    const frames = buffer.split('\n\n');
+    buffer = frames.pop() || '';
+
+    for (const frame of frames) {
+      let eventName = 'message';
+      const dataLines = [];
+
+      for (const line of frame.split('\n')) {
+        if (line.startsWith('event:')) {
+          eventName = line.slice(6).trim();
+          continue;
+        }
+
+        if (line.startsWith('data:')) {
+          dataLines.push(line.slice(5).trim());
+        }
+      }
+
+      if (dataLines.length) {
+        onEvent(eventName, JSON.parse(dataLines.join('\n')));
+      }
+    }
+  }
+}
+
+export function openDashboardStream({ onSnapshot, onHeartbeat, onError }) {
+  const controller = new AbortController();
+  let stopped = false;
+  let retryMs = 2000;
+
+  const connect = async () => {
+    try {
+      await streamSse('/api/dashboard/stream', {
+        signal: controller.signal,
+        onEvent(eventName, payload) {
+          retryMs = 2000;
+          if (eventName === 'snapshot') {
+            onSnapshot?.(payload);
+            return;
+          }
+
+          if (eventName === 'heartbeat') {
+            onHeartbeat?.(payload);
+          }
+        },
+      });
+    } catch (error) {
+      if (stopped || controller.signal.aborted) {
+        return;
+      }
+
+      onError?.(error);
+    }
+
+    if (!stopped && !controller.signal.aborted) {
+      const nextDelay = retryMs;
+      retryMs = Math.min(retryMs * 2, 10000);
+      setTimeout(() => {
+        if (!stopped && !controller.signal.aborted) {
+          connect().catch(() => {});
+        }
+      }, nextDelay);
+    }
+  };
+
+  connect().catch((error) => onError?.(error));
+
+  return () => {
+    stopped = true;
+    controller.abort();
+  };
+}
+
 export const api = {
   login: (body) => request('/api/auth/login', { method: 'POST', body: JSON.stringify(body) }),
   me: () => request('/api/auth/me'),

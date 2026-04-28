@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
+const http = require('http');
 const swaggerUi = require('swagger-ui-express');
 const { createRateLimiter } = require('./src/middleware/rateLimit');
 const errorHandler = require('./src/middleware/errorHandler');
@@ -81,7 +82,12 @@ app.get('/', (_req, res) => {
 app.use(errorHandler);
 
 const port = Number(process.env.AA_PORT || 4000);
-app.listen(port, async () => {
+const server = http.createServer(app);
+server.keepAliveTimeout = Number(process.env.SERVER_KEEPALIVE_TIMEOUT_MS || 65000);
+server.headersTimeout = Number(process.env.SERVER_HEADERS_TIMEOUT_MS || 66000);
+server.requestTimeout = Number(process.env.SERVER_REQUEST_TIMEOUT_MS || 30000);
+
+server.listen(port, async () => {
   try {
     const result = await ensureInitialAdmin();
     if (result.created) {

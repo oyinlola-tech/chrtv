@@ -1,0 +1,16 @@
+{
+  "name": "chrtv-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Carrier Haulage Real Time Visibility Platform",
+  "scripts": {
+    "postinstall": "npm install --prefix backend",
+    "dev": "npm run dev --prefix backend",
+    "start": "npm run start --prefix backend",
+    "schema": "npm run schema --prefix backend",
+    "seed": "npm run seed --prefix backend",
+    "test": "npm run test --prefix backend",
+    "check": "npm run check --prefix backend",
+    "security:audit": "npm run security:audit --prefix backend"
+  }
+}

@@ -18,7 +18,11 @@ app.get('/health', (_req, res) => res.json({ ok: true, service: 'tracking-servic
 app.use('/ingest', ingestRoute);
 
 app.get('/positions/latest', async (_req, res) => {
-  const positions = await positionStore.getLatestPositions();
+  const limit = Number(_req.query.limit || 500);
+  if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
+    return res.status(400).json({ error: 'limit must be an integer between 1 and 500' });
+  }
+  const positions = await positionStore.getLatestPositions(limit);
   res.json({ positions });
 });
 

@@ -12,10 +12,13 @@ export function createPositionMap(elementId, center = [6.5244, 3.3792], zoom = 5
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
+  map.__positionLayer = L.layerGroup().addTo(map);
   return map;
 }
 
 export function renderPositionMarkers(map, positions) {
+  const layer = map.__positionLayer || L.layerGroup().addTo(map);
+  layer.clearLayers();
   const bounds = [];
   positions.forEach((position) => {
     if (position.latitude == null || position.longitude == null) return;
@@ -25,7 +28,7 @@ export function renderPositionMarkers(map, positions) {
       fillColor: '#f97316',
       fillOpacity: 0.9,
       weight: 2
-    }).addTo(map);
+    }).addTo(layer);
     marker.bindPopup(`<strong>${escapeHtml(position.imei)}</strong><br>${escapeHtml(new Date(position.utc_timestamp).toLocaleString())}`);
     bounds.push([position.latitude, position.longitude]);
   });

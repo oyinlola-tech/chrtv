@@ -5,6 +5,14 @@ const option2Stub = require('./option2Stub');
 const latestByImei = new Map();
 let intervalRef = null;
 
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+}
+
 function upsertCoordinate(payload) {
   latestByImei.set(payload.imei, payload);
 }
@@ -30,13 +38,16 @@ async function flush() {
   }));
 
   latestByImei.clear();
+  const batches = chunkArray(payloads, Math.max(1, Number(process.env.OPTION1_MAX_BATCH_SIZE || 200)));
 
-  if (config.active_option === 'option1') {
-    await option1Client.sendCoordinates(payloads);
-    return;
+  for (const batch of batches) {
+    if (config.active_option === 'option1') {
+      await option1Client.sendCoordinates(batch);
+      continue;
+    }
+
+    await option2Stub.sendCoordinates(batch);
   }
-
-  await option2Stub.sendCoordinates(payloads);
 }
 
 function start(intervalSeconds = 600) {
@@ -54,4 +65,3 @@ module.exports = {
   flush,
   start,
 };
-

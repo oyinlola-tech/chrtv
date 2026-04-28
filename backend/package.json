@@ -10,6 +10,7 @@
     "schema": "node database/schema.js",
     "seed": "node scripts/seed.js",
     "start": "node scripts/start-all.js",
+    "perf:doctor": "node scripts/perf-doctor.js",
     "start:device-gateway": "node device-gateway/server.js",
     "start:tracking-service": "node tracking-service/server.js",
     "start:asset-service": "node asset-service/server.js",

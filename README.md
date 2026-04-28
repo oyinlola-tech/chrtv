@@ -21,7 +21,7 @@ See [LICENSE.md](LICENSE.md) for full legal terms and [NOTICE.md](NOTICE.md) for
 1. Read [SETUP.md](SETUP.md) for installation and deployment details.
 2. Review [SECURITY.md](SECURITY.md) before testing, sharing, or deploying.
 3. Review [AUDIT_REPORT.md](AUDIT_REPORT.md) for the current hardening and audit summary.
-4. Run `npm install`, `npm run schema`, `npm run seed`, and `npm run dev` from `backend`.
+4. Run `npm install`, `npm run schema`, `npm run seed`, and `npm run dev` from the repository root.
 5. Open `http://localhost:4000`.
 
 ## Overview
@@ -75,7 +75,6 @@ This repository contains:
 ### Install and Run
 
 ```bash
-cd backend
 npm install
 npm run schema
 npm run seed

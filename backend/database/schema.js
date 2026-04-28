@@ -73,6 +73,26 @@ const schemaStatements = [
     INDEX idx_imei_time (imei, utc_timestamp),
     INDEX idx_position_time (utc_timestamp)
   )`,
+  `CREATE TABLE IF NOT EXISTS latest_device_positions (
+    imei VARCHAR(20) PRIMARY KEY,
+    utc_timestamp DATETIME(3) NOT NULL,
+    latitude DECIMAL(10,7),
+    longitude DECIMAL(10,7),
+    speed FLOAT,
+    heading FLOAT,
+    altitude FLOAT,
+    acc_state BOOLEAN,
+    door_state BOOLEAN,
+    fuel1_percent FLOAT,
+    fuel2_percent FLOAT,
+    temperature FLOAT,
+    mileage_km FLOAT,
+    gps_valid BOOLEAN,
+    raw_message TEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_latest_updated (updated_at),
+    INDEX idx_latest_timestamp (utc_timestamp)
+  )`,
   `CREATE TABLE IF NOT EXISTS integration_config (
     id INT PRIMARY KEY DEFAULT 1,
     active_option ENUM('option1','option2') DEFAULT 'option2',
@@ -162,6 +182,18 @@ async function ensureSchemaCompatibility(connection) {
     'device_positions',
     'idx_position_time',
     'INDEX `idx_position_time` (`utc_timestamp`)'
+  );
+  await ensureIndex(
+    connection,
+    'latest_device_positions',
+    'idx_latest_updated',
+    'INDEX `idx_latest_updated` (`updated_at`)'
+  );
+  await ensureIndex(
+    connection,
+    'latest_device_positions',
+    'idx_latest_timestamp',
+    'INDEX `idx_latest_timestamp` (`utc_timestamp`)'
   );
   await ensureIndex(
     connection,

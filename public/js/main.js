@@ -1,4 +1,4 @@
-import { api, setSession } from './api.js';
+import { api, openDashboardStream, setSession } from './api.js';
 import { card, escapeHtml, flash, formatDate, protectPage, renderShell, table } from './ui.js';
 import { createPositionMap, enableFacilityPicker, renderPositionMarkers } from './map.js';
 
@@ -65,6 +65,37 @@ function boolLabel(value) {
   return value ? 'Active' : 'Inactive';
 }
 
+function attachPageCleanup(cleanup) {
+  window.addEventListener('beforeunload', cleanup, { once: true });
+}
+
+function renderDashboardCards(stats) {
+  document.getElementById('dashboard-cards').innerHTML = [
+    card('Connected Devices', stats.deviceCount || 0),
+    card('Active Assignments', stats.activeAssignments || 0, 'bg-orange-50 border-orange-100'),
+    card('Orders In Progress', stats.activeOrders || 0),
+    card('Integration Mode', stats.integrationOption === 'option1' ? 'Option 1' : 'Option 2', 'bg-blue-50 border-blue-100'),
+  ].join('');
+}
+
+function renderDashboardEvents(events) {
+  const rows = (events || []).slice(0, 10).map((event) => `
+    <tr class="border-t border-slate-100">
+      <td class="px-4 py-3 text-sm font-medium text-slate-800">${escapeHtml(metric(event.event_type))}</td>
+      <td class="px-4 py-3 text-sm text-slate-600">${escapeHtml(metric(event.equipmentReference || event.equipment_reference))}</td>
+      <td class="px-4 py-3 text-sm text-slate-600">${escapeHtml(metric(event.facility?.name))}</td>
+      <td class="px-4 py-3 text-sm text-slate-500">${escapeHtml(formatDate(event.timestamp))}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('dashboard-events').innerHTML = `
+    <div class="rounded-[1.8rem] border border-slate-200 bg-white p-4 shadow-sm">
+      <h3 class="mb-4 font-display text-xl text-ink">Recent Events</h3>
+      ${table(['Event', 'Equipment', 'Facility', 'Timestamp'], rowsOrEmpty(rows, 4, 'No recent events yet.'))}
+    </div>
+  `;
+}
+
 async function initLogin() {
   const form = document.getElementById('login-form');
   const errorBox = document.getElementById('login-error');
@@ -101,33 +132,24 @@ async function initDashboard() {
     </section>
   `);
 
-  const [stats, positionFeed] = await Promise.all([api.dashboardStats(), api.dashboardPositions()]);
-
-  document.getElementById('dashboard-cards').innerHTML = [
-    card('Connected Devices', stats.deviceCount || 0),
-    card('Active Assignments', stats.activeAssignments || 0, 'bg-orange-50 border-orange-100'),
-    card('Orders In Progress', stats.activeOrders || 0),
-    card('Integration Mode', stats.integrationOption === 'option1' ? 'Option 1' : 'Option 2', 'bg-blue-50 border-blue-100'),
-  ].join('');
-
   const map = createPositionMap('dashboard-map');
-  renderPositionMarkers(map, positionFeed.positions || []);
+  const stats = await api.dashboardStats();
+  renderDashboardCards(stats);
+  renderPositionMarkers(map, stats.recentPositions || []);
+  renderDashboardEvents(stats.recentEvents || []);
 
-  const rows = (stats.recentEvents || []).slice(0, 10).map((event) => `
-    <tr class="border-t border-slate-100">
-      <td class="px-4 py-3 text-sm font-medium text-slate-800">${escapeHtml(metric(event.event_type))}</td>
-      <td class="px-4 py-3 text-sm text-slate-600">${escapeHtml(metric(event.equipmentReference || event.equipment_reference))}</td>
-      <td class="px-4 py-3 text-sm text-slate-600">${escapeHtml(metric(event.facility?.name))}</td>
-      <td class="px-4 py-3 text-sm text-slate-500">${escapeHtml(formatDate(event.timestamp))}</td>
-    </tr>
-  `).join('');
+  const stopStream = openDashboardStream({
+    onSnapshot(snapshot) {
+      renderDashboardCards(snapshot.stats || {});
+      renderPositionMarkers(map, snapshot.positions || []);
+      renderDashboardEvents(snapshot.events || []);
+    },
+    onError() {
+      flash('Live dashboard stream reconnecting...', 'error');
+    },
+  });
 
-  document.getElementById('dashboard-events').innerHTML = `
-    <div class="rounded-[1.8rem] border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 class="mb-4 font-display text-xl text-ink">Recent Events</h3>
-      ${table(['Event', 'Equipment', 'Facility', 'Timestamp'], rowsOrEmpty(rows, 4, 'No recent events yet.'))}
-    </div>
-  `;
+  attachPageCleanup(stopStream);
 }
 
 async function initTracking() {
@@ -141,42 +163,53 @@ async function initTracking() {
     </section>
   `);
 
-  const [positionsRes, eventsRes] = await Promise.all([
-    api.dashboardPositions(),
-    api.dashboardEvents(),
-  ]);
-
   const map = createPositionMap('tracking-map');
-  renderPositionMarkers(map, positionsRes.positions || []);
+  const renderTrackingView = (positions = [], events = []) => {
+    renderPositionMarkers(map, positions);
 
-  const rows = (positionsRes.positions || []).slice(0, 15).map((position) => `
-    <tr class="border-t border-slate-100">
-      <td class="px-4 py-3 text-sm font-medium text-slate-800">${escapeHtml(metric(position.imei))}</td>
-      <td class="px-4 py-3 text-sm text-slate-600">${escapeHtml(metric(position.latitude))}, ${escapeHtml(metric(position.longitude))}</td>
-      <td class="px-4 py-3 text-sm text-slate-600">${escapeHtml(metric(position.speed, 0))}</td>
-      <td class="px-4 py-3 text-sm text-slate-500">${escapeHtml(formatDate(position.utc_timestamp))}</td>
-    </tr>
-  `).join('');
+    const rows = positions.slice(0, 15).map((position) => `
+      <tr class="border-t border-slate-100">
+        <td class="px-4 py-3 text-sm font-medium text-slate-800">${escapeHtml(metric(position.imei))}</td>
+        <td class="px-4 py-3 text-sm text-slate-600">${escapeHtml(metric(position.latitude))}, ${escapeHtml(metric(position.longitude))}</td>
+        <td class="px-4 py-3 text-sm text-slate-600">${escapeHtml(metric(position.speed, 0))}</td>
+        <td class="px-4 py-3 text-sm text-slate-500">${escapeHtml(formatDate(position.utc_timestamp))}</td>
+      </tr>
+    `).join('');
 
-  const eventChips = (eventsRes.events || []).slice(0, 8).map((event) => `
-    <div class="rounded-2xl border border-slate-100 bg-slate-50 p-3">
-      <p class="text-sm font-medium text-slate-800">${escapeHtml(metric(event.event_type))}</p>
-      <p class="mt-1 text-xs text-slate-500">${escapeHtml(metric(event.equipmentReference || event.equipment_reference))} at ${escapeHtml(metric(event.facility?.name))}</p>
-    </div>
-  `).join('');
-
-  document.getElementById('tracking-table').innerHTML = `
-    <div class="grid gap-6">
-      <div class="rounded-[1.8rem] border border-slate-200 bg-white p-4 shadow-sm">
-        <h3 class="mb-4 font-display text-xl text-ink">Latest Positions</h3>
-        ${table(['IMEI', 'Coordinates', 'Speed', 'Timestamp'], rowsOrEmpty(rows, 4, 'No positions available.'))}
+    const eventChips = events.slice(0, 8).map((event) => `
+      <div class="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+        <p class="text-sm font-medium text-slate-800">${escapeHtml(metric(event.event_type))}</p>
+        <p class="mt-1 text-xs text-slate-500">${escapeHtml(metric(event.equipmentReference || event.equipment_reference))} at ${escapeHtml(metric(event.facility?.name))}</p>
       </div>
-      <div class="rounded-[1.8rem] border border-slate-200 bg-white p-4 shadow-sm">
-        <h3 class="mb-4 font-display text-xl text-ink">Recent Alerts</h3>
-        <div class="grid gap-3">${eventChips || '<p class="text-sm text-slate-500">No recent events.</p>'}</div>
+    `).join('');
+
+    document.getElementById('tracking-table').innerHTML = `
+      <div class="grid gap-6">
+        <div class="rounded-[1.8rem] border border-slate-200 bg-white p-4 shadow-sm">
+          <h3 class="mb-4 font-display text-xl text-ink">Latest Positions</h3>
+          ${table(['IMEI', 'Coordinates', 'Speed', 'Timestamp'], rowsOrEmpty(rows, 4, 'No positions available.'))}
+        </div>
+        <div class="rounded-[1.8rem] border border-slate-200 bg-white p-4 shadow-sm">
+          <h3 class="mb-4 font-display text-xl text-ink">Recent Alerts</h3>
+          <div class="grid gap-3">${eventChips || '<p class="text-sm text-slate-500">No recent events.</p>'}</div>
+        </div>
       </div>
-    </div>
-  `;
+    `;
+  };
+
+  const stats = await api.dashboardStats();
+  renderTrackingView(stats.recentPositions || [], stats.recentEvents || []);
+
+  const stopStream = openDashboardStream({
+    onSnapshot(snapshot) {
+      renderTrackingView(snapshot.positions || [], snapshot.events || []);
+    },
+    onError() {
+      flash('Live tracking stream reconnecting...', 'error');
+    },
+  });
+
+  attachPageCleanup(stopStream);
 }
 
 async function initFleet() {
