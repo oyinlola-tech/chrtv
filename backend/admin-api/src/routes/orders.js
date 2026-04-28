@@ -22,7 +22,8 @@ router.post('/orders', requireJsonObjectBody, asyncHandler(async (req, res) => {
 }));
 
 router.put('/orders/:id', validateNumericIdParam(), requireJsonObjectBody, asyncHandler(async (req, res) => {
-  const response = await client.put(`${base}/orders/${req.params.id}`, req.body);
+  const id = String(Number.parseInt(req.params.id, 10));
+  const response = await client.put(`${base}/orders/${id}`, req.body);
   res.json(response.data);
 }));
 
