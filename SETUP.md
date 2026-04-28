@@ -1,5 +1,13 @@
 # CH RTV Platform - Setup & Deployment Guide
 
+## Ownership & Usage Restriction
+
+**Owner:** OLuwayemi Oyinlola Michael  
+**Portfolio:** https://www.oyinlola.site/  
+**GitHub:** https://github.com/oyinlola-tech
+
+This repository is proprietary and **not free to use**. This setup guide does not grant any license to copy, deploy, modify, or redistribute the platform. Review `LICENSE.md`, `NOTICE.md`, and `SECURITY.md` before sharing or using this project outside an explicitly authorized context.
+
 ## Overview
 
 CH RTV (Carrier Haulage Real-Time Visibility) is a comprehensive fleet tracking and logistics management platform that integrates COBAN GPS trackers via TCP sockets with a real-time monitoring dashboard.
@@ -348,4 +356,4 @@ mysqldump -u root rtv_platform > backup_$(date +%Y%m%d).sql
 
 ## License
 
-Proprietary - Carrier Haulage Real Time Visibility Platform
+Proprietary and unlicensed for public reuse. See `LICENSE.md`.

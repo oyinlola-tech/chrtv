@@ -1,8 +1,13 @@
 # CH RTV Platform - Comprehensive Audit & Improvements Summary
 
+**Owner:** OLuwayemi Oyinlola Michael
+**Portfolio:** https://www.oyinlola.site/
+**GitHub:** https://github.com/oyinlola-tech
+**Legal Notice:** This repository is proprietary, all rights reserved, and not free to use. See `LICENSE.md`, `NOTICE.md`, and `SECURITY.md`.
+
 **Audit Date:** April 28, 2026
 **Project:** CHRTV - Carrier Haulage Real-Time Visibility Platform
-**Status:** ✅ AUDIT & IMPROVEMENTS COMPLETED
+**Status:** Audit and improvements completed
 
 ---
 

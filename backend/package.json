@@ -2,6 +2,9 @@
   "name": "ch-rtv-backend",
   "version": "1.0.0",
   "private": true,
+  "license": "UNLICENSED",
+  "author": "OLuwayemi Oyinlola Michael",
+  "homepage": "https://www.oyinlola.site/",
   "scripts": {
     "dev": "node scripts/start-all.js",
     "schema": "node database/schema.js",
