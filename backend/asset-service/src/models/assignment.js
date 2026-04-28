@@ -78,7 +78,7 @@ async function getAssignmentByImei(imei) {
 
   const assignment = rows[0];
   const facilities = await query(
-    `SELECT ofs.id, ofs.transport_order_id, ofs.facility_id AS id_ref, ofs.sequence_order, ofs.area_name,
+    `SELECT ofs.id, ofs.transport_order_id, ofs.facility_id AS id_ref, ofs.sequence_order, ofs.area_name, ofs.geofence_active, ofs.geofence_provisioned,
             f.id, f.name, f.facility_type_code, f.location_code, f.latitude, f.longitude, f.radius_meters, f.address_json
      FROM order_facility_sequence ofs
      INNER JOIN facilities f ON f.id = ofs.facility_id
@@ -91,6 +91,8 @@ async function getAssignmentByImei(imei) {
     id: facility.id,
     sequence_order: facility.sequence_order,
     area_name: facility.area_name,
+    geofence_active: Boolean(facility.geofence_active),
+    geofence_provisioned: Boolean(facility.geofence_provisioned),
     name: facility.name,
     facility_type_code: facility.facility_type_code,
     location_code: facility.location_code,
@@ -107,6 +109,17 @@ async function deleteAssignment(id) {
   await query('DELETE FROM assignments WHERE id = ?', [id]);
 }
 
+async function listAssignmentsNeedingGeofenceProvisioning() {
+  return query(
+    `SELECT DISTINCT a.id, a.transport_order_id, a.imei
+     FROM assignments a
+     INNER JOIN order_facility_sequence ofs ON ofs.transport_order_id = a.transport_order_id
+     WHERE a.is_active = 1
+       AND ofs.geofence_provisioned = 0
+     ORDER BY a.id ASC`
+  );
+}
+
 module.exports = {
   listAssignments,
   createAssignment,
@@ -114,5 +127,5 @@ module.exports = {
   getAssignmentById,
   getAssignmentByImei,
   deleteAssignment,
+  listAssignmentsNeedingGeofenceProvisioning,
 };
-

@@ -2,6 +2,7 @@ require('../shared/env').loadEnv();
 const express = require('express');
 const ingestRoute = require('./src/routes/ingest');
 const positionStore = require('./src/services/positionStore');
+const geofenceEngine = require('./src/services/geofenceEngine');
 const {
   applyServiceSecurity,
   getServiceHost,
@@ -42,8 +43,17 @@ app.get('/events/recent', async (_req, res) => {
 
 app.use(serviceErrorHandler);
 
-const port = Number(process.env.TS_PORT || 3001);
-const host = getServiceHost('TS_HOST');
-app.listen(port, host, () => {
-  console.log(`tracking-service listening on ${host}:${port}`);
+async function start() {
+  await geofenceEngine.initialize();
+
+  const port = Number(process.env.TS_PORT || 3001);
+  const host = getServiceHost('TS_HOST');
+  app.listen(port, host, () => {
+    console.log(`tracking-service listening on ${host}:${port}`);
+  });
+}
+
+start().catch((error) => {
+  console.error('tracking-service failed to start', error);
+  process.exit(1);
 });

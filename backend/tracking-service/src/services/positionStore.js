@@ -2,9 +2,18 @@ const { query } = require('../../../shared/db');
 
 const recentEvents = [];
 
+function toNullableDate(value) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 async function storePosition(payload) {
   const data = payload.data || {};
-  const utcTimestamp = data.utcTimestamp ? new Date(data.utcTimestamp) : new Date();
+  const utcTimestamp = toNullableDate(data.utcTimestamp);
   const record = [
     payload.imei,
     utcTimestamp,
@@ -30,27 +39,29 @@ async function storePosition(payload) {
     record
   );
 
-  await query(
-    `INSERT INTO latest_device_positions
-      (imei, utc_timestamp, latitude, longitude, speed, heading, altitude, acc_state, door_state, fuel1_percent, fuel2_percent, temperature, mileage_km, gps_valid, raw_message)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-     ON DUPLICATE KEY UPDATE
-      utc_timestamp = VALUES(utc_timestamp),
-      latitude = VALUES(latitude),
-      longitude = VALUES(longitude),
-      speed = VALUES(speed),
-      heading = VALUES(heading),
-      altitude = VALUES(altitude),
-      acc_state = VALUES(acc_state),
-      door_state = VALUES(door_state),
-      fuel1_percent = VALUES(fuel1_percent),
-      fuel2_percent = VALUES(fuel2_percent),
-      temperature = VALUES(temperature),
-      mileage_km = VALUES(mileage_km),
-      gps_valid = VALUES(gps_valid),
-      raw_message = VALUES(raw_message)`,
-    record
-  );
+  if (utcTimestamp) {
+    await query(
+      `INSERT INTO latest_device_positions
+        (imei, utc_timestamp, latitude, longitude, speed, heading, altitude, acc_state, door_state, fuel1_percent, fuel2_percent, temperature, mileage_km, gps_valid, raw_message)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+        utc_timestamp = VALUES(utc_timestamp),
+        latitude = VALUES(latitude),
+        longitude = VALUES(longitude),
+        speed = VALUES(speed),
+        heading = VALUES(heading),
+        altitude = VALUES(altitude),
+        acc_state = VALUES(acc_state),
+        door_state = VALUES(door_state),
+        fuel1_percent = VALUES(fuel1_percent),
+        fuel2_percent = VALUES(fuel2_percent),
+        temperature = VALUES(temperature),
+        mileage_km = VALUES(mileage_km),
+        gps_valid = VALUES(gps_valid),
+        raw_message = VALUES(raw_message)`,
+      record
+    );
+  }
 }
 
 function pushRecentEvent(event) {
@@ -76,7 +87,10 @@ async function getLatestPositions(limit = 500) {
 
 async function getRecentPositions(limit = 50) {
   return query(
-    `SELECT * FROM device_positions ORDER BY utc_timestamp DESC LIMIT ?`,
+    `SELECT *
+     FROM device_positions
+     ORDER BY COALESCE(utc_timestamp, created_at) DESC, id DESC
+     LIMIT ?`,
     [limit]
   );
 }

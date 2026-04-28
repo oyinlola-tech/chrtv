@@ -1,3 +1,5 @@
+const { query } = require('../../../shared/db');
+
 const imeiState = new Map();
 
 function toRadians(value) {
@@ -16,7 +18,37 @@ function distanceMeters(aLat, aLng, bLat, bLng) {
   return 2 * earthRadius * Math.atan2(Math.sqrt(hav), Math.sqrt(1 - hav));
 }
 
-function evaluate(positionPayload, assignment) {
+function stateKey(imei, facilityId) {
+  return `${imei}:${facilityId}`;
+}
+
+async function initialize() {
+  const rows = await query(
+    `SELECT imei, facility_id, is_inside, last_utc_timestamp
+     FROM geofence_state`
+  );
+
+  imeiState.clear();
+  rows.forEach((row) => {
+    imeiState.set(stateKey(row.imei, row.facility_id), {
+      isInside: Boolean(row.is_inside),
+      lastUtcTimestamp: row.last_utc_timestamp ? new Date(row.last_utc_timestamp).toISOString() : null,
+    });
+  });
+}
+
+async function persistState(imei, facilityId, isInside, utcTimestamp) {
+  await query(
+    `INSERT INTO geofence_state (imei, facility_id, is_inside, last_utc_timestamp)
+     VALUES (?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+      is_inside = VALUES(is_inside),
+      last_utc_timestamp = VALUES(last_utc_timestamp)`,
+    [imei, facilityId, Number(isInside), utcTimestamp ? new Date(utcTimestamp) : null]
+  );
+}
+
+async function evaluate(positionPayload, assignment) {
   if (!assignment || assignment.useDeviceGeofence || !Array.isArray(assignment.facilities)) {
     return [];
   }
@@ -27,10 +59,9 @@ function evaluate(positionPayload, assignment) {
     return [];
   }
 
-  const currentState = imeiState.get(positionPayload.imei) || {};
   const events = [];
 
-  assignment.facilities.forEach((facility) => {
+  for (const facility of assignment.facilities) {
     const distance = distanceMeters(
       lat,
       lng,
@@ -38,9 +69,11 @@ function evaluate(positionPayload, assignment) {
       Number(facility.longitude)
     );
     const inside = distance <= Number(facility.radius_meters || 500);
-    const prevInside = currentState[facility.id] || false;
+    const key = stateKey(positionPayload.imei, facility.id);
+    const previous = imeiState.get(key);
+    const prevInside = previous?.isInside;
 
-    if (!prevInside && inside) {
+    if (prevInside === false && inside) {
       events.push({
         imei: positionPayload.imei,
         event_type: 'ARRI',
@@ -52,7 +85,7 @@ function evaluate(positionPayload, assignment) {
       });
     }
 
-    if (prevInside && !inside) {
+    if (prevInside === true && !inside) {
       events.push({
         imei: positionPayload.imei,
         event_type: 'DEPA',
@@ -64,13 +97,17 @@ function evaluate(positionPayload, assignment) {
       });
     }
 
-    currentState[facility.id] = inside;
-  });
+    imeiState.set(key, {
+      isInside: inside,
+      lastUtcTimestamp: positionPayload.data.utcTimestamp,
+    });
+    await persistState(positionPayload.imei, facility.id, inside, positionPayload.data.utcTimestamp);
+  }
 
-  imeiState.set(positionPayload.imei, currentState);
   return events;
 }
 
 module.exports = {
+  initialize,
   evaluate,
 };

@@ -55,9 +55,20 @@ router.put('/:id', async (req, res) => {
     if (!/^\d+$/.test(String(req.params.id))) {
       throw badRequest('id must be a positive integer');
     }
+    const id = Number(req.params.id);
     validateAssignmentBody(req.body);
-    const assignment = await assignmentModel.updateAssignment(Number(req.params.id), req.body);
-    res.json({ assignment });
+    const previousAssignment = await assignmentModel.getAssignmentById(id);
+    if (!previousAssignment) {
+      const error = new Error('Assignment not found');
+      error.status = 404;
+      throw error;
+    }
+
+    const assignment = await assignmentModel.updateAssignment(id, req.body);
+    const needsProvisioning = previousAssignment.imei !== assignment.imei
+      || Number(previousAssignment.transport_order_id) !== Number(assignment.transport_order_id);
+    const provisioning = needsProvisioning ? await geofenceConfig.sendToDevice(assignment.id) : null;
+    res.json({ assignment, provisioning, reprovisioned: needsProvisioning });
   } catch (error) {
     res.status(error.status || 500).json({ error: error.message });
   }

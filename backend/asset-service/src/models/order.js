@@ -32,8 +32,8 @@ async function createOrder(data) {
     if (Array.isArray(data.facility_sequence)) {
       for (let index = 0; index < data.facility_sequence.length; index += 1) {
         await connection.execute(
-          `INSERT INTO order_facility_sequence (transport_order_id, facility_id, sequence_order, area_name)
-           VALUES (?, ?, ?, NULL)`,
+          `INSERT INTO order_facility_sequence (transport_order_id, facility_id, sequence_order, area_name, geofence_active, geofence_provisioned)
+           VALUES (?, ?, ?, NULL, 0, 0)`,
           [result.insertId, data.facility_sequence[index], index + 1]
         );
       }
@@ -74,8 +74,8 @@ async function updateOrder(id, data) {
       await connection.execute('DELETE FROM order_facility_sequence WHERE transport_order_id = ?', [id]);
       for (let index = 0; index < data.facility_sequence.length; index += 1) {
         await connection.execute(
-          `INSERT INTO order_facility_sequence (transport_order_id, facility_id, sequence_order, area_name)
-           VALUES (?, ?, ?, NULL)`,
+          `INSERT INTO order_facility_sequence (transport_order_id, facility_id, sequence_order, area_name, geofence_active, geofence_provisioned)
+           VALUES (?, ?, ?, NULL, 0, 0)`,
           [id, data.facility_sequence[index], index + 1]
         );
       }
@@ -119,6 +119,24 @@ async function getOrderFacilities(orderId) {
   );
 }
 
+async function markGeofencePending(orderId, facilityId) {
+  await query(
+    `UPDATE order_facility_sequence
+     SET area_name = NULL, geofence_active = 0, geofence_provisioned = 0
+     WHERE transport_order_id = ? AND facility_id = ?`,
+    [orderId, facilityId]
+  );
+}
+
+async function activateGeofence(orderId, facilityId, areaName) {
+  await query(
+    `UPDATE order_facility_sequence
+     SET area_name = ?, geofence_active = 1, geofence_provisioned = 1
+     WHERE transport_order_id = ? AND facility_id = ?`,
+    [areaName, orderId, facilityId]
+  );
+}
+
 async function setAreaName(orderId, facilityId, areaName) {
   await query(
     `UPDATE order_facility_sequence
@@ -128,6 +146,47 @@ async function setAreaName(orderId, facilityId, areaName) {
   );
 }
 
+async function listPendingGeofenceProvisioningRows() {
+  return query(
+    `SELECT a.id AS assignment_id,
+            a.imei,
+            ofs.transport_order_id,
+            ofs.facility_id,
+            ofs.sequence_order,
+            ofs.area_name,
+            f.latitude,
+            f.longitude,
+            f.radius_meters
+     FROM assignments a
+     INNER JOIN order_facility_sequence ofs ON ofs.transport_order_id = a.transport_order_id
+     INNER JOIN facilities f ON f.id = ofs.facility_id
+     WHERE a.is_active = 1
+       AND ofs.geofence_provisioned = 0
+     ORDER BY a.id ASC, ofs.sequence_order ASC`
+  );
+}
+
+async function findNextPendingGeofenceForImei(imei) {
+  const rows = await query(
+    `SELECT a.id AS assignment_id,
+            a.imei,
+            ofs.transport_order_id,
+            ofs.facility_id,
+            ofs.sequence_order,
+            ofs.area_name
+     FROM assignments a
+     INNER JOIN order_facility_sequence ofs ON ofs.transport_order_id = a.transport_order_id
+     WHERE a.imei = ?
+       AND a.is_active = 1
+       AND ofs.geofence_provisioned = 0
+     ORDER BY ofs.sequence_order ASC
+     LIMIT 1`,
+    [imei]
+  );
+
+  return rows[0] || null;
+}
+
 module.exports = {
   listOrders,
   getOrderById,
@@ -135,5 +194,9 @@ module.exports = {
   updateOrder,
   deleteOrder,
   getOrderFacilities,
+  markGeofencePending,
+  activateGeofence,
   setAreaName,
+  listPendingGeofenceProvisioningRows,
+  findNextPendingGeofenceForImei,
 };

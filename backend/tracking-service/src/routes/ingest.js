@@ -39,6 +39,14 @@ function validatePayload(payload) {
   return { valid: true };
 }
 
+function hasUsableTimestamp(payload) {
+  return typeof payload?.data?.utcTimestamp === 'string' && payload.data.utcTimestamp.length > 0;
+}
+
+function requiresUtcTimestamp(payload) {
+  return payload?.type === 'position' || payload?.type === 'geofence';
+}
+
 router.post('/', requireLoopback, async (req, res) => {
   if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
     return res.status(400).json({ error: 'Request body must be a JSON object' });
@@ -51,6 +59,10 @@ router.post('/', requireLoopback, async (req, res) => {
 
   const payload = new Position(req.body);
 
+  if (requiresUtcTimestamp(payload) && !hasUsableTimestamp(payload)) {
+    return res.status(400).json({ error: 'utcTimestamp is required for position and geofence payloads' });
+  }
+
   try {
     await positionStore.storePosition(payload);
     const assignment = await eventDetector.getAssignment(payload.imei);
@@ -59,7 +71,7 @@ router.post('/', requireLoopback, async (req, res) => {
       await eventDetector.sendCoordinate(payload, assignment);
 
       if (!assignment.useDeviceGeofence) {
-        const events = geofenceEngine.evaluate(payload, assignment);
+        const events = await geofenceEngine.evaluate(payload, assignment);
         for (const event of events) {
           const enriched = await eventDetector.enrichEvent(event, assignment);
           await eventDetector.sendEvent(enriched);
@@ -68,6 +80,10 @@ router.post('/', requireLoopback, async (req, res) => {
     }
 
     if (payload.type === 'geofence' && assignment) {
+      if (!hasUsableGps(payload)) {
+        return res.json({ ok: true, skipped: true, reason: 'invalid_geofence_gps' });
+      }
+
       const areaFacility = assignment.facilities.find(
         (facility) => facility.area_name === payload.data.areaName
       );

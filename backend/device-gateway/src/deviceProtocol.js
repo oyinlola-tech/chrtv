@@ -72,6 +72,13 @@ function parsePosition(parts, rawMessage) {
   const gpsValid = gpsSignal === 'F' && gpsValidity === 'A';
   const latitude = gpsSignal === 'L' ? null : convertNmeaToDecimal(latRaw, latHemisphere);
   const longitude = gpsSignal === 'L' ? null : convertNmeaToDecimal(lonRaw, lonHemisphere);
+  let utcTimestamp = null;
+
+  try {
+    utcTimestamp = parseUtcTimestamp(dateToken, fixTime);
+  } catch (_error) {
+    console.warn(`Invalid COBAN timestamp in message: ${rawMessage}`);
+  }
 
   return {
     imei: parts[0].replace(/^imei:/i, ''),
@@ -84,7 +91,7 @@ function parsePosition(parts, rawMessage) {
       gpsSignal,
       gpsValid,
       utcFixTime: fixTime,
-      utcTimestamp: parseUtcTimestamp(dateToken, fixTime),
+      utcTimestamp,
       latitude,
       longitude,
       speed: speed ? Number(speed) : null,
@@ -146,6 +153,9 @@ function parseGeofence(parts, rawMessage) {
   }
 
   const position = parsePosition([parts[0], '001', ...parts.slice(2)], rawMessage);
+  if (!position.data.gpsValid || position.data.latitude == null || position.data.longitude == null) {
+    return null;
+  }
 
   return {
     imei: parts[0].replace(/^imei:/i, ''),
@@ -154,6 +164,7 @@ function parseGeofence(parts, rawMessage) {
       rawMessage,
       areaName: match[1].toLowerCase(),
       direction: match[2].toLowerCase(),
+      gpsValid: true,
       utcTimestamp: position.data.utcTimestamp,
       latitude: position.data.latitude,
       longitude: position.data.longitude,
@@ -178,6 +189,10 @@ function parseAlarm(parts, rawMessage) {
     data: {
       rawMessage,
       keyword,
+      dateToken: position.data.dateToken,
+      gpsSignal: position.data.gpsSignal,
+      gpsValid: position.data.gpsValid,
+      utcFixTime: position.data.utcFixTime,
       utcTimestamp: position.data.utcTimestamp,
       latitude: position.data.latitude,
       longitude: position.data.longitude,
@@ -193,6 +208,17 @@ function parseAlarm(parts, rawMessage) {
   };
 }
 
+function parseAck(parts, rawMessage) {
+  return {
+    imei: parts[0].replace(/^imei:/i, ''),
+    type: 'ack',
+    data: {
+      rawMessage,
+      keyword: cleanToken(parts[1]),
+    },
+  };
+}
+
 function parse(rawMessage) {
   const message = String(rawMessage || '').trim();
   if (!message || !message.startsWith('imei:')) {
@@ -204,6 +230,10 @@ function parse(rawMessage) {
 
   if (keyword === '001' || keyword.startsWith('001 ')) {
     return parsePosition(parts, rawMessage);
+  }
+
+  if (keyword === '121') {
+    return parseAck(parts, rawMessage);
   }
 
   if (/^area\d{2}\s+(in|out)$/i.test(keyword)) {

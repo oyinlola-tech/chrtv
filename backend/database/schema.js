@@ -51,13 +51,15 @@ const schemaStatements = [
     facility_id INT NOT NULL,
     sequence_order INT NOT NULL,
     area_name VARCHAR(10),
+    geofence_active BOOLEAN DEFAULT FALSE,
+    geofence_provisioned TINYINT(1) DEFAULT 0,
     FOREIGN KEY (transport_order_id) REFERENCES transport_orders(id),
     FOREIGN KEY (facility_id) REFERENCES facilities(id)
   )`,
   `CREATE TABLE IF NOT EXISTS device_positions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     imei VARCHAR(20) NOT NULL,
-    utc_timestamp DATETIME(3) NOT NULL,
+    utc_timestamp DATETIME(3) NULL,
     latitude DECIMAL(10,7),
     longitude DECIMAL(10,7),
     speed FLOAT,
@@ -71,6 +73,7 @@ const schemaStatements = [
     mileage_km FLOAT,
     gps_valid BOOLEAN,
     raw_message TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_imei_time (imei, utc_timestamp),
     INDEX idx_position_time (utc_timestamp)
   )`,
@@ -111,6 +114,13 @@ const schemaStatements = [
     response_body TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_integration_logs_created (created_at)
+  )`,
+  `CREATE TABLE IF NOT EXISTS geofence_state (
+    imei VARCHAR(20) NOT NULL,
+    facility_id INT NOT NULL,
+    is_inside BOOLEAN NOT NULL,
+    last_utc_timestamp DATETIME(3) NULL,
+    PRIMARY KEY (imei, facility_id)
   )`,
   `CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -243,9 +253,40 @@ async function ensureSchemaCompatibility(connection) {
     'email',
     'UNIQUE INDEX `email` (`email`)'
   );
+  await ensureColumn(
+    connection,
+    'order_facility_sequence',
+    'geofence_active',
+    '`geofence_active` BOOLEAN DEFAULT FALSE'
+  );
+  await ensureColumn(
+    connection,
+    'order_facility_sequence',
+    'geofence_provisioned',
+    '`geofence_provisioned` TINYINT(1) DEFAULT 0'
+  );
+  await ensureColumn(
+    connection,
+    'device_positions',
+    'created_at',
+    '`created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+  );
+  await connection.query(
+    `ALTER TABLE device_positions
+     MODIFY COLUMN utc_timestamp DATETIME(3) NULL`
+  );
   await connection.query(
     `ALTER TABLE users
      MODIFY COLUMN email VARCHAR(255) NOT NULL`
+  );
+  await connection.query(
+    `CREATE TABLE IF NOT EXISTS geofence_state (
+      imei VARCHAR(20) NOT NULL,
+      facility_id INT NOT NULL,
+      is_inside BOOLEAN NOT NULL,
+      last_utc_timestamp DATETIME(3) NULL,
+      PRIMARY KEY (imei, facility_id)
+    )`
   );
   await connection.query(
     `CREATE TABLE IF NOT EXISTS password_reset_otps (

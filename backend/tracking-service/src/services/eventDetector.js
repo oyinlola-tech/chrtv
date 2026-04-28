@@ -15,7 +15,7 @@ async function getAssignment(imei) {
       Array.isArray(assignment.facilities) &&
       assignment.facilities.length > 0 &&
       assignment.facilities.every(
-        (facility) => typeof facility.area_name === 'string' && facility.area_name.trim().length > 0
+        (facility) => facility.geofence_active === true
       )
     );
 
