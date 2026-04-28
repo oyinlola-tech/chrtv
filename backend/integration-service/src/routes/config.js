@@ -70,6 +70,21 @@ router.put('/', async (req, res) => {
       ...(await configModel.ensureRow()),
       ...req.body,
     };
+
+    if (merged.active_option === 'option1') {
+      if (typeof merged.option1_api_base_url !== 'string' || merged.option1_api_base_url.trim().length === 0) {
+        const error = new Error('option1_api_base_url is required when active_option is option1');
+        error.status = 400;
+        throw error;
+      }
+
+      if (typeof merged.option1_auth_token !== 'string' || merged.option1_auth_token.trim().length === 0) {
+        const error = new Error('option1_auth_token is required when active_option is option1');
+        error.status = 400;
+        throw error;
+      }
+    }
+
     const config = await configModel.updateConfig(merged);
     throttleManager.start(config.option1_coordinates_interval_seconds);
     res.json({ config });

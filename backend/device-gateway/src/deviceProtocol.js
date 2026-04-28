@@ -35,36 +35,51 @@ function splitMessage(message) {
     .map(cleanToken);
 }
 
+function normalizePositionParts(parts) {
+  const keywordToken = cleanToken(parts[1]).replace(/\s+/g, ' ');
+  const keywordParts = keywordToken.split(' ').filter(Boolean);
+  const keyword = keywordParts[0] || '';
+  const extendedPrefix = keywordParts.slice(1);
+
+  return {
+    keyword,
+    extendedPrefix,
+    fields: parts.slice(2),
+  };
+}
+
 function parsePosition(parts, rawMessage) {
-  const keyword = parts[1];
-  const dateToken = parts[2] || '';
-  const phone = parts[3] || '';
-  const gpsSignal = parts[4] || '';
-  const fixTime = parts[5] || '';
-  const gpsValidity = parts[6] || '';
-  const latRaw = parts[7] || '';
-  const latHemisphere = parts[8] || '';
-  const lonRaw = parts[9] || '';
-  const lonHemisphere = parts[10] || '';
-  const speed = parts[11] || '';
-  const headingOrAddress = parts[12] || '';
-  const altitude = parts[13] || '';
-  const accState = parts[14] || '';
-  const doorState = parts[15] || '';
-  const fuel1 = parts[16] || '';
-  const fuel2OrMileage = parts[17] || '';
-  const temperature = parts[18] || '';
+  const normalized = normalizePositionParts(parts);
+  const extendedFuel = extendedPrefixPercent(normalized.extendedPrefix[0]);
+  const extendedTemperature = extendedPrefixTemperature(normalized.extendedPrefix[1]);
+  const dateToken = normalized.fields[0] || '';
+  const phone = normalized.fields[1] || '';
+  const gpsSignal = normalized.fields[2] || '';
+  const fixTime = normalized.fields[3] || '';
+  const gpsValidity = normalized.fields[4] || '';
+  const latRaw = normalized.fields[5] || '';
+  const latHemisphere = normalized.fields[6] || '';
+  const lonRaw = normalized.fields[7] || '';
+  const lonHemisphere = normalized.fields[8] || '';
+  const speed = normalized.fields[9] || '';
+  const headingOrAddress = normalized.fields[10] || '';
+  const altitude = normalized.fields[11] || '';
+  const accState = normalized.fields[12] || '';
+  const doorState = normalized.fields[13] || '';
+  const fuel1 = normalized.fields[14] || '';
+  const fuel2OrMileage = normalized.fields[15] || '';
+  const temperature = normalized.fields[16] || '';
 
   return {
     imei: parts[0].replace(/^imei:/i, ''),
     type: 'position',
     data: {
-      keyword,
+      keyword: normalized.keyword,
       rawMessage,
       dateToken,
       phone,
       gpsSignal,
-      gpsValid: gpsSignal === 'F' || gpsValidity === 'A',
+      gpsValid: gpsSignal === 'F' && gpsValidity === 'A',
       utcFixTime: fixTime,
       utcTimestamp: parseUtcTimestamp(dateToken, fixTime),
       latitude: convertNmeaToDecimal(latRaw, latHemisphere),
@@ -75,12 +90,30 @@ function parsePosition(parts, rawMessage) {
       altitude: altitude ? Number(altitude) : null,
       accState: accState === '1',
       doorState: doorState === '1',
-      fuel1Percent: parsePercent(fuel1),
+      fuel1Percent: extendedFuel ?? parsePercent(fuel1),
       fuel2Percent: parsePercent(fuel2OrMileage),
       mileageKm: parseMileage(fuel2OrMileage),
-      temperature: temperature ? Number(temperature) : null,
+      temperature: extendedTemperature ?? (temperature ? Number(temperature) : null),
+      extendedPrefix: normalized.extendedPrefix,
     },
   };
+}
+
+function extendedPrefixPercent(value) {
+  if (!value || !String(value).includes('%')) {
+    return null;
+  }
+
+  return parsePercent(value);
+}
+
+function extendedPrefixTemperature(value) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? null : parsed;
 }
 
 function parsePercent(value) {
@@ -107,7 +140,7 @@ function parseGeofence(parts, rawMessage) {
     return null;
   }
 
-  const position = parsePosition([parts[0], '001', parts[2], parts[3], parts[4], parts[5], parts[6], parts[7], parts[8], parts[9], parts[10], parts[11], parts[12], parts[13], parts[14], parts[15], parts[16], parts[17], parts[18]], rawMessage);
+  const position = parsePosition([parts[0], '001', ...parts.slice(2)], rawMessage);
 
   return {
     imei: parts[0].replace(/^imei:/i, ''),
@@ -132,7 +165,7 @@ function parseAlarm(parts, rawMessage) {
     return null;
   }
 
-  const position = parsePosition([parts[0], '001', parts[2], parts[3], parts[4], parts[5], parts[6], parts[7], parts[8], parts[9], parts[10], parts[11], parts[12], parts[13], parts[14], parts[15], parts[16], parts[17], parts[18]], rawMessage);
+  const position = parsePosition([parts[0], '001', ...parts.slice(2)], rawMessage);
 
   return {
     imei: parts[0].replace(/^imei:/i, ''),
@@ -164,7 +197,7 @@ function parse(rawMessage) {
   const parts = splitMessage(message);
   const keyword = cleanToken(parts[1]).replace(/\s+/g, ' ').toLowerCase();
 
-  if (keyword === '001') {
+  if (keyword === '001' || keyword.startsWith('001 ')) {
     return parsePosition(parts, rawMessage);
   }
 
@@ -189,4 +222,3 @@ function parse(rawMessage) {
 module.exports = {
   parse,
 };
-

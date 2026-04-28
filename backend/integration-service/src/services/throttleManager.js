@@ -23,30 +23,31 @@ async function flush() {
   }
 
   const config = await configModel.getConfig();
-  const payloads = Array.from(latestByImei.values()).map((item) => ({
-    equipmentReference: item.assignment.equipment_reference,
-    eventCreatedDateTime: new Date(item.timestamp).toISOString(),
-    originatorName: item.assignment.originator_name,
-    partnerName: item.assignment.partner_name || ' ',
-    carrierBookingReference: item.assignment.carrier_booking_ref || '',
-    modeOfTransport: item.assignment.mode_of_transport || 'TRUCK',
-    transportOrder: item.assignment.order_number || '',
-    eventLocation: {
-      latitude: item.lat,
-      longitude: item.lng,
-    },
-  }));
+  const entries = Array.from(latestByImei.entries());
+  const batches = chunkArray(entries, Math.max(1, Number(process.env.OPTION1_MAX_BATCH_SIZE || 200)));
 
-  latestByImei.clear();
-  const batches = chunkArray(payloads, Math.max(1, Number(process.env.OPTION1_MAX_BATCH_SIZE || 200)));
+  for (const batchEntries of batches) {
+    const batch = batchEntries.map(([, item]) => ({
+      equipmentReference: item.assignment.equipment_reference,
+      eventCreatedDateTime: new Date(item.timestamp).toISOString(),
+      originatorName: item.assignment.originator_name,
+      partnerName: item.assignment.partner_name || ' ',
+      carrierBookingReference: item.assignment.carrier_booking_ref || '',
+      modeOfTransport: item.assignment.mode_of_transport || 'TRUCK',
+      transportOrder: item.assignment.order_number || '',
+      eventLocation: {
+        latitude: item.lat,
+        longitude: item.lng,
+      },
+    }));
 
-  for (const batch of batches) {
     if (config.active_option === 'option1') {
       await option1Client.sendCoordinates(batch);
-      continue;
+    } else {
+      await option2Stub.sendCoordinates(batch);
     }
 
-    await option2Stub.sendCoordinates(batch);
+    batchEntries.forEach(([imei]) => latestByImei.delete(imei));
   }
 }
 
@@ -64,4 +65,10 @@ module.exports = {
   upsertCoordinate,
   flush,
   start,
+  resetBuffer() {
+    latestByImei.clear();
+  },
+  getBufferedCount() {
+    return latestByImei.size;
+  },
 };

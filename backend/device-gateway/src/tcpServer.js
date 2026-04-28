@@ -133,4 +133,6 @@ function start() {
 
 module.exports = {
   start,
+  handleFrame,
+  safeWrite,
 };

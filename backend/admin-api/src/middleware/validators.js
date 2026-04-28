@@ -206,6 +206,10 @@ function validateIntegrationConfigUpdate(req, res, next) {
     return badRequest(res, 'option1_api_base_url is required when active_option is option1');
   }
 
+  if (activeOption === 'option1' && (!authToken || authToken.trim().length === 0)) {
+    return badRequest(res, 'option1_auth_token is required when active_option is option1');
+  }
+
   return next();
 }
 

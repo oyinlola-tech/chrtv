@@ -5,6 +5,7 @@ const { sendMail } = require('../../../shared/email');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const OTP_TTL_MINUTES = Number(process.env.PASSWORD_RESET_OTP_TTL_MINUTES || 10);
+const OTP_MAX_ATTEMPTS = Number(process.env.PASSWORD_RESET_OTP_MAX_ATTEMPTS || 5);
 
 function normalizeEmail(value) {
   return String(value || '').trim().toLowerCase();
@@ -80,9 +81,10 @@ async function createUserAccount({ username, email, password, role }) {
 }
 
 async function issuePasswordResetOtp(identifier) {
+  await purgeExpiredOtps();
   const user = await findUserByIdentifier(identifier);
   if (!user) {
-    return { delivered: false, maskedEmail: null };
+    return { delivered: false };
   }
 
   const otp = generateOtp();
@@ -117,22 +119,14 @@ async function issuePasswordResetOtp(identifier) {
     `,
   });
 
-  return {
-    delivered: true,
-    maskedEmail: maskEmail(user.email),
-  };
-}
-
-function maskEmail(email) {
-  const [name, domain] = normalizeEmail(email).split('@');
-  const visibleName = name.length <= 2 ? `${name[0] || '*'}*` : `${name.slice(0, 2)}${'*'.repeat(Math.max(2, name.length - 2))}`;
-  return `${visibleName}@${domain}`;
+  return { delivered: true };
 }
 
 async function resetPasswordWithOtp({ email, otp, password }) {
+  await purgeExpiredOtps();
   const normalizedEmail = normalizeEmail(email);
   const rows = await query(
-    `SELECT pro.id, pro.otp_hash, pro.expires_at, u.id AS user_id
+    `SELECT pro.id, pro.otp_hash, pro.expires_at, pro.attempt_count, u.id AS user_id
      FROM password_reset_otps pro
      INNER JOIN users u ON u.id = pro.user_id
      WHERE u.email = ? AND pro.purpose = 'password_reset' AND pro.consumed_at IS NULL
@@ -156,6 +150,14 @@ async function resetPasswordWithOtp({ email, otp, password }) {
   }
 
   if (hashOtp(otp) !== record.otp_hash) {
+    const nextAttempts = Number(record.attempt_count || 0) + 1;
+    await query(
+      `UPDATE password_reset_otps
+       SET attempt_count = ?,
+           consumed_at = CASE WHEN ? >= ? THEN CURRENT_TIMESTAMP ELSE consumed_at END
+       WHERE id = ?`,
+      [nextAttempts, nextAttempts, OTP_MAX_ATTEMPTS, record.id]
+    );
     const error = new Error('Invalid or expired OTP');
     error.status = 400;
     throw error;
@@ -164,6 +166,14 @@ async function resetPasswordWithOtp({ email, otp, password }) {
   const passwordHash = await bcrypt.hash(password, 10);
   await query('UPDATE users SET password_hash = ? WHERE id = ?', [passwordHash, record.user_id]);
   await query('UPDATE password_reset_otps SET consumed_at = CURRENT_TIMESTAMP WHERE id = ?', [record.id]);
+}
+
+async function purgeExpiredOtps() {
+  await query(
+    `DELETE FROM password_reset_otps
+     WHERE expires_at < UTC_TIMESTAMP()
+        OR (consumed_at IS NOT NULL AND created_at < (UTC_TIMESTAMP() - INTERVAL 7 DAY))`
+  );
 }
 
 module.exports = {

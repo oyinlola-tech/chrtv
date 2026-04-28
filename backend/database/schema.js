@@ -96,7 +96,7 @@ const schemaStatements = [
   )`,
   `CREATE TABLE IF NOT EXISTS integration_config (
     id INT PRIMARY KEY DEFAULT 1,
-    active_option ENUM('option1','option2') DEFAULT 'option2',
+    active_option ENUM('option1','option2') DEFAULT 'option1',
     option1_coordinates_interval_seconds INT DEFAULT 600,
     option1_api_base_url VARCHAR(255),
     option1_auth_token VARCHAR(255),
@@ -126,6 +126,7 @@ const schemaStatements = [
     user_id INT NOT NULL,
     otp_hash CHAR(64) NOT NULL,
     purpose ENUM('password_reset') DEFAULT 'password_reset',
+    attempt_count INT NOT NULL DEFAULT 0,
     expires_at DATETIME NOT NULL,
     consumed_at DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -134,7 +135,7 @@ const schemaStatements = [
     FOREIGN KEY (user_id) REFERENCES users(id)
   )`,
   `INSERT INTO integration_config (id, active_option, option1_coordinates_interval_seconds, option1_api_base_url, option1_auth_token, option2_settings_json)
-   VALUES (1, 'option2', 600, '', '', '{}')
+   VALUES (1, 'option1', 600, 'https://api.cma-cgm.example.com', 'placeholdertoken', '{}')
    ON DUPLICATE KEY UPDATE id = id`
 ];
 
@@ -248,6 +249,7 @@ async function ensureSchemaCompatibility(connection) {
       user_id INT NOT NULL,
       otp_hash CHAR(64) NOT NULL,
       purpose ENUM('password_reset') DEFAULT 'password_reset',
+      attempt_count INT NOT NULL DEFAULT 0,
       expires_at DATETIME NOT NULL,
       consumed_at DATETIME NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -255,6 +257,12 @@ async function ensureSchemaCompatibility(connection) {
       INDEX idx_password_reset_expires (expires_at),
       FOREIGN KEY (user_id) REFERENCES users(id)
     )`
+  );
+  await ensureColumn(
+    connection,
+    'password_reset_otps',
+    'attempt_count',
+    '`attempt_count` INT NOT NULL DEFAULT 0'
   );
 }
 

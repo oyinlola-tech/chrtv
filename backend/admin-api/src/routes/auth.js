@@ -54,12 +54,10 @@ router.post('/login', loginRateLimit, requireJsonObjectBody, validateCredentials
 }));
 
 router.post('/request-reset', otpRateLimit, requireJsonObjectBody, validateOtpRequest, asyncHandler(async (req, res) => {
-  const result = await issuePasswordResetOtp(req.body.identifier);
+  await issuePasswordResetOtp(req.body.identifier);
   return res.json({
     ok: true,
-    message: result.delivered
-      ? `OTP sent to ${result.maskedEmail}`
-      : 'If that account exists, an OTP has been sent to its email address.',
+    message: 'If that account exists, an OTP has been sent to its email address.',
   });
 }));
 

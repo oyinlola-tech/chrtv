@@ -29,3 +29,20 @@ test('parses known alarm packets', () => {
   assert.equal(payload.data.keyword, 'low battery');
   assert.equal(payload.data.fuel1Percent, 15);
 });
+
+test('treats GPS as invalid unless both fix flags are valid', () => {
+  const payload = parse('imei:123456789012345,001,240428,080000,L,080000,A,0651.4640,N,00323.1840,E,45,180,12,1,0,75%,200,31;');
+
+  assert.equal(payload.type, 'position');
+  assert.equal(payload.data.gpsValid, false);
+});
+
+test('parses extended 001 packets with embedded fuel and temperature prefix', () => {
+  const payload = parse('imei:123456789012345,001 0.1% +28.0,240428,080000,F,080000,A,0651.4640,N,00323.1840,E,45,180,12,1,0,75%,200,31;');
+
+  assert.equal(payload.type, 'position');
+  assert.equal(payload.data.keyword, '001');
+  assert.equal(payload.data.gpsValid, true);
+  assert.equal(payload.data.fuel1Percent, 0.1);
+  assert.equal(payload.data.temperature, 28);
+});

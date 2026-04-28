@@ -6,15 +6,24 @@
 - npm
 - AMPPS MySQL running locally on `127.0.0.1:3306`
 
+## Environment
+
+1. Copy `.env.example` to `.env`.
+2. Set a strong `JWT_SECRET`.
+3. Set `INITIAL_ADMIN_USERNAME`, `INITIAL_ADMIN_EMAIL`, and `INITIAL_ADMIN_PASSWORD`.
+4. Configure SMTP before testing OTP reset:
+   - `SMTP_HOST`
+   - `SMTP_PORT`
+   - `SMTP_SECURE`
+   - `SMTP_USER`
+   - `SMTP_PASS`
+   - `SMTP_FROM`
+5. On Windows with AMPPS, prefer `DB_HOST=127.0.0.1` instead of `localhost`.
+
 ## Localhost Run Flow
 
-1. Copy `.env.example` to `.env` if needed and set a strong `JWT_SECRET`.
-2. Prefer `DB_HOST=127.0.0.1` instead of `localhost` for AMPPS on Windows to avoid IPv6/hostname resolution issues.
-3. Configure SMTP before testing password reset:
-   `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
-4. Set `INITIAL_ADMIN_EMAIL` in `.env` for the bootstrap admin account.
-5. Start AMPPS MySQL before running schema or seed commands.
-6. From the repository root run:
+1. Start AMPPS MySQL.
+2. From the repository root run:
 
 ```bash
 npm install
@@ -23,8 +32,8 @@ npm run seed
 npm run dev
 ```
 
-7. Open `http://localhost:4000`.
-8. Sign in with the initial admin from `.env`, or use the seeded users after `npm run seed`.
+3. Open `http://localhost:4000`.
+4. Sign in with the bootstrap admin from `.env` or a seeded user.
 
 ## Default Ports
 
@@ -35,9 +44,9 @@ npm run dev
 - `3002`: asset service
 - `3003`: integration service
 
-## Local Testing Notes
+## Notes
 
-- Internal microservice HTTP endpoints are loopback-only by design.
-- The integration service defaults to `option2` so localhost runs do not require an external CMA-CGM endpoint.
-- If schema or seed fails with `ECONNREFUSED 127.0.0.1:3306`, AMPPS MySQL is not running or is listening on a different port.
-- If schema or seed fails with `connect ECONNREFUSED ::1:3306`, switch `DB_HOST` from `localhost` to `127.0.0.1`.
+- Internal microservice HTTP traffic is loopback-only by design.
+- The integration service defaults to `option2` for local testing.
+- If schema or seed fails with `connect ECONNREFUSED 127.0.0.1:3306`, AMPPS MySQL is not running or is listening on a different port.
+- If password reset fails with an SMTP configuration message, fill in the SMTP settings in `.env` first.

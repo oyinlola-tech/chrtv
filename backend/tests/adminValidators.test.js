@@ -107,6 +107,7 @@ test('validateIntegrationConfigUpdate normalizes valid option1 URLs', () => {
     body: {
       active_option: 'option1',
       option1_api_base_url: 'https://api.example.com/path?q=1',
+      option1_auth_token: 'placeholdertoken',
       option1_coordinates_interval_seconds: '600',
     },
   };

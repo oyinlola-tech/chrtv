@@ -3,7 +3,7 @@ const { query } = require('../../../shared/db');
 async function ensureRow() {
   await query(
     `INSERT INTO integration_config (id, active_option, option1_coordinates_interval_seconds, option1_api_base_url, option1_auth_token, option2_settings_json)
-     VALUES (1, 'option2', 600, '', '', '{}')
+     VALUES (1, 'option1', 600, 'https://api.cma-cgm.example.com', 'placeholdertoken', '{}')
      ON DUPLICATE KEY UPDATE id = id`
   );
   return getConfig();
