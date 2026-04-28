@@ -2,6 +2,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
+  validateCredentials,
+  validateCreateUser,
+  validatePasswordReset,
   validateDeviceCommand,
   validateIntegrationConfigUpdate,
 } = require('../admin-api/src/middleware/validators');
@@ -39,6 +42,64 @@ test('validateDeviceCommand rejects control characters in params', () => {
   assert.equal(called, false);
   assert.equal(res.statusCode, 400);
   assert.match(res.payload.error, /unsupported/i);
+});
+
+test('validateCredentials accepts email login identifiers', () => {
+  const req = {
+    body: {
+      identifier: 'operator1@example.com',
+      password: 'operator@2024',
+    },
+  };
+  const res = createRes();
+  let called = false;
+
+  validateCredentials(req, res, () => {
+    called = true;
+  });
+
+  assert.equal(called, true);
+  assert.equal(req.body.identifier, 'operator1@example.com');
+});
+
+test('validateCreateUser requires email and normalizes it', () => {
+  const req = {
+    body: {
+      username: 'operator1',
+      email: 'Operator1@Example.com ',
+      password: 'operator@2024',
+      role: 'operator',
+    },
+  };
+  const res = createRes();
+  let called = false;
+
+  validateCreateUser(req, res, () => {
+    called = true;
+  });
+
+  assert.equal(called, true);
+  assert.equal(req.body.email, 'operator1@example.com');
+});
+
+test('validatePasswordReset rejects invalid otp values', () => {
+  const req = {
+    body: {
+      email: 'operator1@example.com',
+      otp: '12ab56',
+      password: 'operator@2024',
+    },
+  };
+  const res = createRes();
+  let called = false;
+
+  validatePasswordReset(req, res, () => {
+    called = true;
+  });
+
+  assert.equal(called, false);
+  assert.equal(res.statusCode, 400);
+  assert.match(res.payload.error, /6-digit/i);
 });
 
 test('validateIntegrationConfigUpdate normalizes valid option1 URLs', () => {

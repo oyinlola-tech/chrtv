@@ -99,17 +99,80 @@ function renderDashboardEvents(events) {
 async function initLogin() {
   const form = document.getElementById('login-form');
   const errorBox = document.getElementById('login-error');
+  const successBox = document.getElementById('login-success');
+  const loginTab = document.getElementById('login-tab');
+  const resetTab = document.getElementById('reset-tab');
+  const resetPanel = document.getElementById('reset-panel');
+  const otpRequestForm = document.getElementById('otp-request-form');
+  const resetPasswordForm = document.getElementById('reset-password-form');
+
+  const setMode = (mode) => {
+    const isLogin = mode === 'login';
+    form.classList.toggle('hidden', !isLogin);
+    resetPanel.classList.toggle('hidden', isLogin);
+    loginTab.className = isLogin
+      ? 'rounded-2xl bg-white px-4 py-3 font-medium text-ink shadow-sm'
+      : 'rounded-2xl px-4 py-3 font-medium text-slate-500';
+    resetTab.className = !isLogin
+      ? 'rounded-2xl bg-white px-4 py-3 font-medium text-ink shadow-sm'
+      : 'rounded-2xl px-4 py-3 font-medium text-slate-500';
+    errorBox.classList.add('hidden');
+    successBox.classList.add('hidden');
+  };
+
+  loginTab.addEventListener('click', () => setMode('login'));
+  resetTab.addEventListener('click', () => setMode('reset'));
+  setMode('login');
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     errorBox.classList.add('hidden');
+    successBox.classList.add('hidden');
     try {
       const session = await api.login({
-        username: document.getElementById('username').value.trim(),
+        identifier: document.getElementById('identifier').value.trim(),
         password: document.getElementById('password').value,
       });
       setSession(session);
       window.location.href = '/dashboard';
+    } catch (error) {
+      errorBox.textContent = error.message;
+      errorBox.classList.remove('hidden');
+    }
+  });
+
+  otpRequestForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    errorBox.classList.add('hidden');
+    successBox.classList.add('hidden');
+    try {
+      const response = await api.requestPasswordReset({
+        identifier: document.getElementById('reset-identifier').value.trim(),
+      });
+      successBox.textContent = response.message;
+      successBox.classList.remove('hidden');
+    } catch (error) {
+      errorBox.textContent = error.message;
+      errorBox.classList.remove('hidden');
+    }
+  });
+
+  resetPasswordForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    errorBox.classList.add('hidden');
+    successBox.classList.add('hidden');
+    try {
+      const response = await api.resetPassword({
+        email: document.getElementById('reset-email').value.trim(),
+        otp: document.getElementById('reset-otp').value.trim(),
+        password: document.getElementById('reset-password').value,
+      });
+      setMode('login');
+      successBox.textContent = response.message;
+      successBox.classList.remove('hidden');
+      document.getElementById('identifier').value = document.getElementById('reset-email').value.trim();
+      document.getElementById('password').value = '';
+      resetPasswordForm.reset();
     } catch (error) {
       errorBox.textContent = error.message;
       errorBox.classList.remove('hidden');
@@ -703,6 +766,7 @@ async function initSettings() {
       <h3 class="font-display text-2xl text-ink">Platform Summary</h3>
       <div class="mt-5 grid gap-4 sm:grid-cols-2">
         ${card('Signed In User', sessionRes.user?.username || 'Unknown')}
+        ${card('Account Email', sessionRes.user?.email || '--')}
         ${card('Role', sessionRes.user?.role || 'operator', 'bg-blue-50 border-blue-100')}
         ${card('Integration Mode', configRes.config?.active_option === 'option1' ? 'Option 1' : 'Option 2', 'bg-orange-50 border-orange-100')}
         ${card('Coordinate Interval', `${configRes.config?.option1_coordinates_interval_seconds || 600}s`)}
@@ -723,7 +787,7 @@ async function initSettings() {
 }
 
 async function initUsers() {
-  renderShell('users', 'User Management', 'Create admin or operator users for the admin API JWT login flow.', `
+  renderShell('users', 'User Management', 'Create admin or operator users with email-backed login and OTP password recovery.', `
     <section class="grid gap-6 xl:grid-cols-[420px_1fr]">
       <form id="user-form" class="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-sm space-y-4">
         <div>
@@ -731,6 +795,7 @@ async function initUsers() {
           <h3 class="mt-2 font-display text-2xl text-ink">Access account</h3>
         </div>
         <input id="new-username" class="field" placeholder="Username">
+        <input id="new-email" type="email" class="field" placeholder="Email address">
         <input id="new-password" type="password" class="field" placeholder="Password">
         <select id="new-role" class="field"><option value="admin">admin</option><option value="operator">operator</option></select>
         <button class="rounded-2xl bg-ember px-4 py-3 text-white">Create user</button>
@@ -744,6 +809,7 @@ async function initUsers() {
     event.preventDefault();
     await api.createUser({
       username: document.getElementById('new-username').value.trim(),
+      email: document.getElementById('new-email').value.trim(),
       password: document.getElementById('new-password').value,
       role: document.getElementById('new-role').value,
     });
@@ -754,9 +820,10 @@ async function initUsers() {
   const rows = (usersRes.users || []).map((user) => `
     <tr class="border-t border-slate-100">
       <td class="px-4 py-3 text-sm font-medium text-slate-800">${escapeHtml(user.username)}</td>
+      <td class="px-4 py-3 text-sm text-slate-600">${escapeHtml(user.email)}</td>
       <td class="px-4 py-3 text-sm text-slate-600">${escapeHtml(user.role)}</td>
       <td class="px-4 py-3 text-sm text-slate-500">${escapeHtml(formatDate(user.created_at))}</td>
     </tr>
   `).join('');
-  document.getElementById('users-table').innerHTML = table(['Username', 'Role', 'Created'], rowsOrEmpty(rows, 3, 'No users yet.'));
+  document.getElementById('users-table').innerHTML = table(['Username', 'Email', 'Role', 'Created'], rowsOrEmpty(rows, 4, 'No users yet.'));
 }

@@ -1,5 +1,4 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { query } = require('../../../shared/db');
 const { getRequiredEnv } = require('../../../shared/env');
@@ -9,18 +8,28 @@ const { createRateLimiter } = require('../middleware/rateLimit');
 const {
   requireJsonObjectBody,
   validateCredentials,
+  validateOtpRequest,
+  validatePasswordReset,
   requireLoopback,
 } = require('../middleware/validators');
+const {
+  createUserAccount,
+  findUserByIdentifier,
+  issuePasswordResetOtp,
+  resetPasswordWithOtp,
+  normalizeEmail,
+} = require('../services/userAccounts');
 
 const router = express.Router();
 const authReadRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 60 });
 const bootstrapRateLimit = createRateLimiter({ windowMs: 60 * 60 * 1000, max: 5 });
 const loginRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 15, skipSuccessfulRequests: true });
+const otpRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 5 });
+const resetRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 10 });
 
 router.post('/login', loginRateLimit, requireJsonObjectBody, validateCredentials, asyncHandler(async (req, res) => {
-  const { username, password } = req.body;
-  const users = await query('SELECT * FROM users WHERE username = ?', [username]);
-  const user = users[0];
+  const { identifier, password } = req.body;
+  const user = await findUserByIdentifier(identifier);
   if (!user) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
@@ -38,9 +47,25 @@ router.post('/login', loginRateLimit, requireJsonObjectBody, validateCredentials
     user: {
       id: user.id,
       username: user.username,
+      email: user.email,
       role: user.role,
     },
   });
+}));
+
+router.post('/request-reset', otpRateLimit, requireJsonObjectBody, validateOtpRequest, asyncHandler(async (req, res) => {
+  const result = await issuePasswordResetOtp(req.body.identifier);
+  return res.json({
+    ok: true,
+    message: result.delivered
+      ? `OTP sent to ${result.maskedEmail}`
+      : 'If that account exists, an OTP has been sent to its email address.',
+  });
+}));
+
+router.post('/reset-password', resetRateLimit, requireJsonObjectBody, validatePasswordReset, asyncHandler(async (req, res) => {
+  await resetPasswordWithOtp(req.body);
+  return res.json({ ok: true, message: 'Password reset successful. You can sign in now.' });
 }));
 
 router.post('/bootstrap', bootstrapRateLimit, requireLoopback, asyncHandler(async (req, res) => {
@@ -50,14 +75,11 @@ router.post('/bootstrap', bootstrapRateLimit, requireLoopback, asyncHandler(asyn
   }
 
   const username = getRequiredEnv('INITIAL_ADMIN_USERNAME');
+  const email = normalizeEmail(getRequiredEnv('INITIAL_ADMIN_EMAIL'));
   const password = getRequiredEnv('INITIAL_ADMIN_PASSWORD');
-  const passwordHash = await bcrypt.hash(password, 10);
-  await query(
-    'INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)',
-    [username, passwordHash, 'admin']
-  );
+  await createUserAccount({ username, email, password, role: 'admin' });
 
-  return res.status(201).json({ ok: true, username });
+  return res.status(201).json({ ok: true, username, email });
 }));
 
 router.get('/me', authReadRateLimit, (req, res) => {

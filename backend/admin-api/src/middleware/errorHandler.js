@@ -14,8 +14,8 @@ function errorHandler(error, _req, res, _next) {
   }
 
   // Avoid leaking stack traces in production responses
-  const message = status >= 500 
-    ? 'Internal server error' 
+  const message = (status >= 500 && !error.expose)
+    ? 'Internal server error'
     : (error.message || 'Request failed');
 
   return res.status(status).json({
@@ -24,4 +24,3 @@ function errorHandler(error, _req, res, _next) {
 }
 
 module.exports = errorHandler;
-

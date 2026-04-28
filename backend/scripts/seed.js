@@ -75,8 +75,8 @@ const ASSIGNMENTS = [
 ];
 
 const USERS = [
-  { username: 'operator1', password: 'operator@2024', role: 'operator' },
-  { username: 'supervisor', password: 'supervisor@2024', role: 'admin' },
+  { username: 'operator1', email: 'operator1@chrtv.local', password: 'operator@2024', role: 'operator' },
+  { username: 'supervisor', email: 'supervisor@chrtv.local', password: 'supervisor@2024', role: 'admin' },
 ];
 
 const POSITIONS = [
@@ -158,9 +158,9 @@ async function seedUsers() {
   for (const user of USERS) {
     const passwordHash = await bcrypt.hash(user.password, 10);
     await query(
-      `INSERT INTO users (username, password_hash, role)
-       VALUES (?, ?, ?)`,
-      [user.username, passwordHash, user.role]
+      `INSERT INTO users (username, email, password_hash, role)
+       VALUES (?, ?, ?, ?)`,
+      [user.username, user.email, passwordHash, user.role]
     );
     logLine(`  Created user: ${user.username} (${user.role})`);
   }

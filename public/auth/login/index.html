@@ -48,15 +48,15 @@
       <div class="grid gap-4 sm:grid-cols-3">
         <article class="rounded-3xl border border-white/10 bg-white/5 p-4">
           <p class="text-xs uppercase tracking-[0.24em] text-slate-400">Device Layer</p>
-          <p class="mt-2 text-sm text-slate-200">COBAN login, heartbeat, `001` position parsing, `121` geofence provisioning.</p>
+          <p class="mt-2 text-sm text-slate-200">COBAN login, heartbeat, 001 position parsing, 121 geofence provisioning.</p>
         </article>
         <article class="rounded-3xl border border-white/10 bg-white/5 p-4">
           <p class="text-xs uppercase tracking-[0.24em] text-slate-400">Tracking</p>
           <p class="mt-2 text-sm text-slate-200">Latest coordinates, event transitions, and server-side fallback geofencing.</p>
         </article>
         <article class="rounded-3xl border border-white/10 bg-white/5 p-4">
-          <p class="text-xs uppercase tracking-[0.24em] text-slate-400">Integration</p>
-          <p class="mt-2 text-sm text-slate-200">Toggle between direct API delivery and the Option 2 stub without losing telemetry.</p>
+          <p class="text-xs uppercase tracking-[0.24em] text-slate-400">Recovery</p>
+          <p class="mt-2 text-sm text-slate-200">OTP-based password reset with email delivery through your configured SMTP provider.</p>
         </article>
       </div>
     </section>
@@ -64,25 +64,61 @@
       <div class="mx-auto w-full max-w-md rounded-[2rem] bg-white p-8 shadow-2xl shadow-slate-200">
         <div>
           <p class="text-sm uppercase tracking-[0.28em] text-tide">Secure Access</p>
-          <h2 class="mt-3 font-display text-3xl text-ink">Sign in</h2>
-          <p class="mt-2 text-sm text-slate-500">Authenticate with a platform user from the `users` table.</p>
+          <h2 class="mt-3 font-display text-3xl text-ink">Account access</h2>
+          <p class="mt-2 text-sm text-slate-500">Sign in with username or email, or reset a password with a one-time code sent to the user email.</p>
         </div>
-        <form id="login-form" class="mt-8 space-y-5">
+        <div class="mt-8 grid grid-cols-2 rounded-2xl bg-slate-100 p-1 text-sm">
+          <button id="login-tab" type="button" class="rounded-2xl bg-white px-4 py-3 font-medium text-ink shadow-sm">Sign in</button>
+          <button id="reset-tab" type="button" class="rounded-2xl px-4 py-3 font-medium text-slate-500">Reset password</button>
+        </div>
+        <div id="login-error" class="mt-5 hidden rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700"></div>
+        <div id="login-success" class="mt-5 hidden rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700"></div>
+        <form id="login-form" class="mt-6 space-y-5">
           <label class="block">
-            <span class="mb-2 block text-sm font-medium text-slate-700">Username</span>
-            <input id="username" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-tide focus:bg-white" placeholder="admin">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Username or Email</span>
+            <input id="identifier" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-tide focus:bg-white" placeholder="admin or admin@example.com">
           </label>
           <label class="block">
             <span class="mb-2 block text-sm font-medium text-slate-700">Password</span>
-            <input id="password" type="password" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-tide focus:bg-white" placeholder="••••••••">
+            <input id="password" type="password" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-tide focus:bg-white" placeholder="********">
           </label>
-          <div id="login-error" class="hidden rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700"></div>
           <button class="w-full rounded-2xl bg-ember px-4 py-3 font-medium text-white shadow-lg shadow-orange-200 transition hover:-translate-y-0.5 hover:bg-orange-600">Enter Platform</button>
         </form>
+        <section id="reset-panel" class="mt-6 hidden space-y-6">
+          <form id="otp-request-form" class="space-y-5 rounded-[1.6rem] border border-slate-200 bg-slate-50/70 p-5">
+            <div>
+              <h3 class="font-display text-xl text-ink">1. Request OTP</h3>
+              <p class="mt-1 text-sm text-slate-500">Enter the username or email. The OTP goes to the registered email on that account.</p>
+            </div>
+            <label class="block">
+              <span class="mb-2 block text-sm font-medium text-slate-700">Username or Email</span>
+              <input id="reset-identifier" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-tide" placeholder="operator1 or operator1@example.com">
+            </label>
+            <button class="w-full rounded-2xl border border-tide px-4 py-3 font-medium text-tide transition hover:bg-white">Send OTP</button>
+          </form>
+          <form id="reset-password-form" class="space-y-5 rounded-[1.6rem] border border-slate-200 bg-slate-50/70 p-5">
+            <div>
+              <h3 class="font-display text-xl text-ink">2. Reset Password</h3>
+              <p class="mt-1 text-sm text-slate-500">Use the email that received the OTP, enter the 6-digit code, and choose a new password.</p>
+            </div>
+            <label class="block">
+              <span class="mb-2 block text-sm font-medium text-slate-700">Email</span>
+              <input id="reset-email" type="email" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-tide" placeholder="operator1@example.com">
+            </label>
+            <label class="block">
+              <span class="mb-2 block text-sm font-medium text-slate-700">OTP</span>
+              <input id="reset-otp" inputmode="numeric" maxlength="6" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none tracking-[0.45em] transition focus:border-tide" placeholder="123456">
+            </label>
+            <label class="block">
+              <span class="mb-2 block text-sm font-medium text-slate-700">New Password</span>
+              <input id="reset-password" type="password" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-tide" placeholder="Minimum 8 characters">
+            </label>
+            <button class="w-full rounded-2xl bg-ink px-4 py-3 font-medium text-white transition hover:bg-slate-800">Update Password</button>
+          </form>
+        </section>
       </div>
     </section>
   </main>
   <script type="module" src="/js/main.js"></script>
 </body>
 </html>
-

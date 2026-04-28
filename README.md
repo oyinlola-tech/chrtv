@@ -52,6 +52,7 @@ This repository contains:
 - dashboard, alerts, reports, and tracking views
 - integration mode configuration
 - JWT-based admin authentication
+- username-or-email login with SMTP-delivered OTP password reset
 - rate limiting, validation, and internal service isolation
 
 ## Documentation
@@ -87,6 +88,7 @@ npm run dev
 - URL: `http://localhost:4000`
 - Login page: `http://localhost:4000/auth/login`
 - Initial credentials come from `.env`
+- Each user now needs a unique email for login recovery and OTP delivery
 
 ## Available Scripts
 

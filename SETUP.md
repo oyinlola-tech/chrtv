@@ -10,8 +10,11 @@
 
 1. Copy `.env.example` to `.env` if needed and set a strong `JWT_SECRET`.
 2. Prefer `DB_HOST=127.0.0.1` instead of `localhost` for AMPPS on Windows to avoid IPv6/hostname resolution issues.
-3. Start AMPPS MySQL before running schema or seed commands.
-4. From the repository root run:
+3. Configure SMTP before testing password reset:
+   `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
+4. Set `INITIAL_ADMIN_EMAIL` in `.env` for the bootstrap admin account.
+5. Start AMPPS MySQL before running schema or seed commands.
+6. From the repository root run:
 
 ```bash
 npm install
@@ -20,8 +23,8 @@ npm run seed
 npm run dev
 ```
 
-5. Open `http://localhost:4000`.
-6. Sign in with the initial admin from `.env`, or use the seeded users after `npm run seed`.
+7. Open `http://localhost:4000`.
+8. Sign in with the initial admin from `.env`, or use the seeded users after `npm run seed`.
 
 ## Default Ports
 

@@ -183,6 +183,8 @@ export function openDashboardStream({ onSnapshot, onHeartbeat, onError }) {
 
 export const api = {
   login: (body) => request('/api/auth/login', { method: 'POST', body: JSON.stringify(body) }),
+  requestPasswordReset: (body) => request('/api/auth/request-reset', { method: 'POST', body: JSON.stringify(body) }),
+  resetPassword: (body) => request('/api/auth/reset-password', { method: 'POST', body: JSON.stringify(body) }),
   me: () => request('/api/auth/me'),
   dashboardStats: () => request('/api/dashboard/stats'),
   dashboardPositions: (limit = 100) => request(`/api/dashboard/positions?limit=${Math.min(limit, 500)}`),

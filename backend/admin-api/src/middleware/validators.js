@@ -1,3 +1,6 @@
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USERNAME_RE = /^[a-zA-Z0-9_]{3,50}$/;
+
 function badRequest(res, message) {
   return res.status(400).json({ error: message });
 }
@@ -14,33 +17,96 @@ function requireJsonObjectBody(req, res, next) {
   return next();
 }
 
-function validateCredentials(req, res, next) {
-  const { username, password } = req.body || {};
-  if (typeof username !== 'string' || typeof password !== 'string') {
-    return badRequest(res, 'username and password are required');
-  }
-
-  const normalizedUsername = username.trim();
-  // Enforce stricter username validation: alphanumeric and underscore only
-  if (!/^[a-zA-Z0-9_]{3,50}$/.test(normalizedUsername)) {
-    return badRequest(res, 'username must be 3-50 characters (alphanumeric and underscore only)');
+function validatePassword(password, res) {
+  if (typeof password !== 'string') {
+    return badRequest(res, 'password is required');
   }
 
   if (password.length < 8 || password.length > 128) {
     return badRequest(res, 'password must be between 8 and 128 characters');
   }
 
-  req.body.username = normalizedUsername;
+  return null;
+}
+
+function validateCredentials(req, res, next) {
+  const { identifier, password } = req.body || {};
+  if (typeof identifier !== 'string' || typeof password !== 'string') {
+    return badRequest(res, 'identifier and password are required');
+  }
+
+  const normalizedIdentifier = identifier.trim();
+  if (!EMAIL_RE.test(normalizedIdentifier) && !USERNAME_RE.test(normalizedIdentifier)) {
+    return badRequest(res, 'identifier must be a valid username or email address');
+  }
+
+  const passwordError = validatePassword(password, res);
+  if (passwordError) {
+    return passwordError;
+  }
+
+  req.body.identifier = normalizedIdentifier;
   return next();
 }
 
 function validateCreateUser(req, res, next) {
-  const { role } = req.body || {};
+  const { username, email, password, role } = req.body || {};
+
   if (role && !['admin', 'operator'].includes(role)) {
     return badRequest(res, 'role must be admin or operator');
   }
 
-  return validateCredentials(req, res, next);
+  if (typeof username !== 'string' || !USERNAME_RE.test(username.trim())) {
+    return badRequest(res, 'username must be 3-50 characters (alphanumeric and underscore only)');
+  }
+
+  if (typeof email !== 'string' || !EMAIL_RE.test(email.trim().toLowerCase())) {
+    return badRequest(res, 'email must be a valid email address');
+  }
+
+  const passwordError = validatePassword(password, res);
+  if (passwordError) {
+    return passwordError;
+  }
+
+  req.body.username = username.trim();
+  req.body.email = email.trim().toLowerCase();
+  return next();
+}
+
+function validateOtpRequest(req, res, next) {
+  const { identifier } = req.body || {};
+  if (typeof identifier !== 'string') {
+    return badRequest(res, 'identifier is required');
+  }
+
+  const normalizedIdentifier = identifier.trim();
+  if (!EMAIL_RE.test(normalizedIdentifier) && !USERNAME_RE.test(normalizedIdentifier)) {
+    return badRequest(res, 'identifier must be a valid username or email address');
+  }
+
+  req.body.identifier = normalizedIdentifier;
+  return next();
+}
+
+function validatePasswordReset(req, res, next) {
+  const { email, otp, password } = req.body || {};
+  if (typeof email !== 'string' || !EMAIL_RE.test(email.trim().toLowerCase())) {
+    return badRequest(res, 'email must be a valid email address');
+  }
+
+  if (typeof otp !== 'string' || !/^\d{6}$/.test(otp.trim())) {
+    return badRequest(res, 'otp must be a 6-digit code');
+  }
+
+  const passwordError = validatePassword(password, res);
+  if (passwordError) {
+    return passwordError;
+  }
+
+  req.body.email = email.trim().toLowerCase();
+  req.body.otp = otp.trim();
+  return next();
 }
 
 function validateNumericIdParam(paramName = 'id') {
@@ -157,6 +223,8 @@ module.exports = {
   requireJsonObjectBody,
   validateCredentials,
   validateCreateUser,
+  validateOtpRequest,
+  validatePasswordReset,
   validateNumericIdParam,
   validateDashboardLimit,
   validateDeviceCommand,

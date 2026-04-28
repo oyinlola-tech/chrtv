@@ -119,8 +119,7 @@ const schemaStatements = [
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('admin','operator') DEFAULT 'operator',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_users_created (created_at),
-    INDEX idx_users_email (email)
+    INDEX idx_users_created (created_at)
   )`,
   `CREATE TABLE IF NOT EXISTS password_reset_otps (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -238,12 +237,6 @@ async function ensureSchemaCompatibility(connection) {
     'users',
     'email',
     'UNIQUE INDEX `email` (`email`)'
-  );
-  await ensureIndex(
-    connection,
-    'users',
-    'idx_users_email',
-    'INDEX `idx_users_email` (`email`)'
   );
   await connection.query(
     `ALTER TABLE users

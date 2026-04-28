@@ -6,6 +6,7 @@ function signUser(user, csrfToken) {
     {
       sub: user.id,
       username: user.username,
+      email: user.email,
       role: user.role,
       csrf: csrfToken,
     },

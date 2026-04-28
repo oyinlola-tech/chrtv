@@ -51,6 +51,20 @@ async function listUsers() {
 async function createUserAccount({ username, email, password, role }) {
   const normalizedUsername = normalizeUsername(username);
   const normalizedEmail = normalizeEmail(email);
+  const existing = await query(
+    'SELECT username, email FROM users WHERE username = ? OR email = ? LIMIT 1',
+    [normalizedUsername, normalizedEmail]
+  );
+  if (existing[0]) {
+    const error = new Error(
+      existing[0].username === normalizedUsername
+        ? 'username already exists'
+        : 'email already exists'
+    );
+    error.status = 409;
+    throw error;
+  }
+
   const passwordHash = await bcrypt.hash(password, 10);
 
   await query(
@@ -77,7 +91,7 @@ async function issuePasswordResetOtp(identifier) {
 
   await query(
     `UPDATE password_reset_otps
-     SET consumed_at = CURRENT_TIMESTAMP
+     SET consumed_at = COALESCE(consumed_at, CURRENT_TIMESTAMP)
      WHERE user_id = ? AND consumed_at IS NULL AND expires_at > UTC_TIMESTAMP()`,
     [user.id]
   );
