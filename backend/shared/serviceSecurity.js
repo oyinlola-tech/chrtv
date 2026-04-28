@@ -18,7 +18,6 @@ function applyServiceSecurity(app) {
   app.disable('x-powered-by');
   app.set('trust proxy', false);
   app.use(helmet({
-    contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
   }));
 }
