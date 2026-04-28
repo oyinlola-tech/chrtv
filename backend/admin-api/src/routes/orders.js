@@ -44,12 +44,14 @@ router.post('/facilities', requireJsonObjectBody, asyncHandler(async (req, res) 
 }));
 
 router.put('/facilities/:id', validateNumericIdParam(), requireJsonObjectBody, asyncHandler(async (req, res) => {
-  const response = await client.put(`${base}/facilities/${req.params.id}`, req.body);
+  const id = String(Number.parseInt(req.params.id, 10));
+  const response = await client.put(`${base}/facilities/${id}`, req.body);
   res.json(response.data);
 }));
 
 router.delete('/facilities/:id', validateNumericIdParam(), asyncHandler(async (req, res) => {
-  const response = await client.delete(`${base}/facilities/${req.params.id}`);
+  const id = String(Number.parseInt(req.params.id, 10));
+  const response = await client.delete(`${base}/facilities/${id}`);
   res.json(response.data);
 }));
 
