@@ -1,5 +1,45 @@
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,50}$/;
+
+function hasWhitespace(value) {
+  for (const char of value) {
+    if (char.trim() === '') {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isEmailLocalPart(value) {
+  return value.length > 0 && !value.includes('@') && !hasWhitespace(value);
+}
+
+function isEmailDomainPart(value) {
+  if (!value || value.startsWith('.') || value.endsWith('.')) {
+    return false;
+  }
+
+  const labels = value.split('.');
+  if (labels.length < 2) {
+    return false;
+  }
+
+  return labels.every(
+    (label) => label.length > 0 && !label.includes('@') && !label.includes('.') && !hasWhitespace(label)
+  );
+}
+
+function isEmail(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  const atIndex = normalized.indexOf('@');
+  if (atIndex <= 0 || atIndex !== normalized.lastIndexOf('@')) {
+    return false;
+  }
+
+  const localPart = normalized.slice(0, atIndex);
+  const domainPart = normalized.slice(atIndex + 1);
+  return isEmailLocalPart(localPart) && isEmailDomainPart(domainPart);
+}
 
 function badRequest(res, message) {
   return res.status(400).json({ error: message });
@@ -36,7 +76,7 @@ function validateCredentials(req, res, next) {
   }
 
   const normalizedIdentifier = identifier.trim();
-  if (!EMAIL_RE.test(normalizedIdentifier) && !USERNAME_RE.test(normalizedIdentifier)) {
+  if (!isEmail(normalizedIdentifier) && !USERNAME_RE.test(normalizedIdentifier)) {
     return badRequest(res, 'identifier must be a valid username or email address');
   }
 
@@ -60,7 +100,7 @@ function validateCreateUser(req, res, next) {
     return badRequest(res, 'username must be 3-50 characters (alphanumeric and underscore only)');
   }
 
-  if (typeof email !== 'string' || !EMAIL_RE.test(email.trim().toLowerCase())) {
+  if (typeof email !== 'string' || !isEmail(email)) {
     return badRequest(res, 'email must be a valid email address');
   }
 
@@ -81,7 +121,7 @@ function validateOtpRequest(req, res, next) {
   }
 
   const normalizedIdentifier = identifier.trim();
-  if (!EMAIL_RE.test(normalizedIdentifier) && !USERNAME_RE.test(normalizedIdentifier)) {
+  if (!isEmail(normalizedIdentifier) && !USERNAME_RE.test(normalizedIdentifier)) {
     return badRequest(res, 'identifier must be a valid username or email address');
   }
 
@@ -91,7 +131,7 @@ function validateOtpRequest(req, res, next) {
 
 function validatePasswordReset(req, res, next) {
   const { email, otp, password } = req.body || {};
-  if (typeof email !== 'string' || !EMAIL_RE.test(email.trim().toLowerCase())) {
+  if (typeof email !== 'string' || !isEmail(email)) {
     return badRequest(res, 'email must be a valid email address');
   }
 

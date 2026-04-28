@@ -3,7 +3,6 @@ const crypto = require('crypto');
 const { query } = require('../../../shared/db');
 const { sendMail } = require('../../../shared/email');
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const OTP_TTL_MINUTES = Number(process.env.PASSWORD_RESET_OTP_TTL_MINUTES || 10);
 const OTP_MAX_ATTEMPTS = Number(process.env.PASSWORD_RESET_OTP_MAX_ATTEMPTS || 5);
 
@@ -15,8 +14,45 @@ function normalizeUsername(value) {
   return String(value || '').trim();
 }
 
+function hasWhitespace(value) {
+  for (const char of value) {
+    if (char.trim() === '') {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isEmailLocalPart(value) {
+  return value.length > 0 && !value.includes('@') && !hasWhitespace(value);
+}
+
+function isEmailDomainPart(value) {
+  if (!value || value.startsWith('.') || value.endsWith('.')) {
+    return false;
+  }
+
+  const labels = value.split('.');
+  if (labels.length < 2) {
+    return false;
+  }
+
+  return labels.every(
+    (label) => label.length > 0 && !label.includes('@') && !label.includes('.') && !hasWhitespace(label)
+  );
+}
+
 function isEmail(value) {
-  return EMAIL_RE.test(normalizeEmail(value));
+  const normalized = normalizeEmail(value);
+  const atIndex = normalized.indexOf('@');
+  if (atIndex <= 0 || atIndex !== normalized.lastIndexOf('@')) {
+    return false;
+  }
+
+  const localPart = normalized.slice(0, atIndex);
+  const domainPart = normalized.slice(atIndex + 1);
+  return isEmailLocalPart(localPart) && isEmailDomainPart(domainPart);
 }
 
 function hashOtp(otp) {
