@@ -1,10 +1,31 @@
 const { query } = require('../../../shared/db');
 
+// Simple in-memory cache for facilities (expires after 5 minutes)
+let facilitiesCache = null;
+let facilitiesCacheTime = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 async function listFacilities() {
-  return query('SELECT * FROM facilities ORDER BY name ASC');
+  const now = Date.now();
+  
+  // Return cached result if still valid
+  if (facilitiesCache !== null && (now - facilitiesCacheTime) < CACHE_TTL) {
+    return facilitiesCache;
+  }
+  
+  const facilities = await query('SELECT * FROM facilities ORDER BY name ASC');
+  facilitiesCache = facilities;
+  facilitiesCacheTime = now;
+  return facilities;
+}
+
+function invalidateCache() {
+  facilitiesCache = null;
+  facilitiesCacheTime = 0;
 }
 
 async function createFacility(data) {
+  invalidateCache();
   const result = await query(
     `INSERT INTO facilities
       (name, facility_type_code, location_code, latitude, longitude, radius_meters, address_json)
@@ -23,6 +44,7 @@ async function createFacility(data) {
 }
 
 async function updateFacility(id, data) {
+  invalidateCache();
   await query(
     `UPDATE facilities
      SET name = ?, facility_type_code = ?, location_code = ?, latitude = ?, longitude = ?, radius_meters = ?, address_json = ?
@@ -42,6 +64,7 @@ async function updateFacility(id, data) {
 }
 
 async function deleteFacility(id) {
+  invalidateCache();
   await query('DELETE FROM facilities WHERE id = ?', [id]);
 }
 

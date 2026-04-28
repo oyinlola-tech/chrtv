@@ -78,11 +78,14 @@ function start() {
     }, HANDSHAKE_TIMEOUT);
 
     socket.on('data', (chunk) => {
+      // Prevent buffer overflow attacks
       buffer += chunk.toString();
 
       if (buffer.length > MAX_BUFFER_LENGTH) {
         // Buffer overflow protection
         socket.destroy();
+        clearTimeout(handshakeTimer);
+        deviceManager.unregisterBySocket(socket);
         return;
       }
 
@@ -100,6 +103,8 @@ function start() {
 
     socket.on('timeout', () => {
       socket.destroy();
+      clearTimeout(handshakeTimer);
+      deviceManager.unregisterBySocket(socket);
     });
 
     socket.on('close', () => {

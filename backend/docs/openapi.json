@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "CH RTV Platform API",
-    "version": "1.0.0",
+    "version": "1.0.9",
     "description": "Admin API and platform entry points for the Carrier Haulage Real-Time Visibility platform."
   },
   "servers": [

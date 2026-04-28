@@ -73,4 +73,10 @@ router.put('/assignments/:id', validateNumericIdParam(), requireJsonObjectBody, 
   res.json(response.data);
 }));
 
+router.delete('/assignments/:id', validateNumericIdParam(), asyncHandler(async (req, res) => {
+  const id = String(Number.parseInt(req.params.id, 10));
+  const response = await client.delete(`${getBase()}/assignments/${id}`);
+  res.json(response.data);
+}));
+
 module.exports = router;

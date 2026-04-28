@@ -103,11 +103,16 @@ async function getAssignmentByImei(imei) {
   return assignment;
 }
 
+async function deleteAssignment(id) {
+  await query('DELETE FROM assignments WHERE id = ?', [id]);
+}
+
 module.exports = {
   listAssignments,
   createAssignment,
   updateAssignment,
   getAssignmentById,
   getAssignmentByImei,
+  deleteAssignment,
 };
 

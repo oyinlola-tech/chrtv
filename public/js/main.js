@@ -401,10 +401,21 @@ async function initAssignments() {
       <td class="px-4 py-3 text-sm text-slate-600">${escapeHtml(metric(assignment.license_plate))}</td>
       <td class="px-4 py-3 text-sm text-slate-600">${escapeHtml(metric(assignment.originator_name))}</td>
       <td class="px-4 py-3 text-sm text-slate-600">${escapeHtml(boolLabel(assignment.is_active))}</td>
+      <td class="px-4 py-3 text-right text-sm">
+        <button class="rounded-xl border border-red-200 px-3 py-2 text-red-600 transition hover:bg-red-50" data-assignment-delete="${assignment.id}">Delete</button>
+      </td>
     </tr>
   `).join('');
 
-  document.getElementById('assignments-table').innerHTML = table(['IMEI', 'Order', 'Plate', 'Originator', 'Status'], rowsOrEmpty(rows, 5, 'No assignments available.'));
+  document.getElementById('assignments-table').innerHTML = table(['IMEI', 'Order', 'Plate', 'Originator', 'Status', 'Action'], rowsOrEmpty(rows, 6, 'No assignments available.'));
+  document.getElementById('assignments-table').onclick = async (event) => {
+    const id = event.target.dataset.assignmentDelete;
+    if (!id) return;
+    if (!window.confirm('Delete this assignment?')) return;
+    await api.deleteAssignment(id);
+    flash('Assignment deleted', 'success');
+    await initAssignments();
+  };
 }
 
 async function initAlerts() {

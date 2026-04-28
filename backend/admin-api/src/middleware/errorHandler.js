@@ -3,17 +3,23 @@ function errorHandler(error, _req, res, _next) {
 
   if (error.isAxiosError) {
     const upstreamStatus = error.response?.status || 502;
+    const upstreamError = error.response?.data?.error || 'Upstream service request failed';
     return res.status(upstreamStatus).json({
-      error: 'Upstream service request failed',
+      error: upstreamError,
     });
   }
 
   if (status >= 500) {
-    console.error(error);
+    console.error('[ERROR]', error.message, error.stack);
   }
 
+  // Avoid leaking stack traces in production responses
+  const message = status >= 500 
+    ? 'Internal server error' 
+    : (error.message || 'Request failed');
+
   return res.status(status).json({
-    error: status >= 500 ? 'Internal server error' : error.message,
+    error: message,
   });
 }
 

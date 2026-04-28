@@ -21,8 +21,9 @@ function validateCredentials(req, res, next) {
   }
 
   const normalizedUsername = username.trim();
-  if (normalizedUsername.length < 3 || normalizedUsername.length > 50) {
-    return badRequest(res, 'username must be between 3 and 50 characters');
+  // Enforce stricter username validation: alphanumeric and underscore only
+  if (!/^[a-zA-Z0-9_]{3,50}$/.test(normalizedUsername)) {
+    return badRequest(res, 'username must be 3-50 characters (alphanumeric and underscore only)');
   }
 
   if (password.length < 8 || password.length > 128) {

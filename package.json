@@ -1,6 +1,6 @@
 {
   "name": "chrtv-platform",
-  "version": "1.0.0",
+  "version": "1.0.9",
   "private": true,
   "description": "Carrier Haulage Real Time Visibility Platform",
   "scripts": {

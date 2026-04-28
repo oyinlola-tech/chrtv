@@ -63,4 +63,16 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+router.delete('/:id', async (req, res) => {
+  try {
+    if (!/^\d+$/.test(String(req.params.id))) {
+      throw badRequest('id must be a positive integer');
+    }
+    await assignmentModel.deleteAssignment(Number(req.params.id));
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
