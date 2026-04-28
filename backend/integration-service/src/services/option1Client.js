@@ -36,11 +36,10 @@ async function sendCoordinates(payload) {
 
 async function sendEvent(payload) {
   const path = process.env.OPTION1_EVENTS_PATH || '/events';
-  return post('event', path, payload);
+  return post('event', path, [payload]);
 }
 
 module.exports = {
   sendCoordinates,
   sendEvent,
 };
-

@@ -51,6 +51,12 @@ function build(eventPayload) {
 
 async function buildAndSend(eventPayload) {
   const config = await configModel.getConfig();
+  const facility = eventPayload.facility || null;
+  if (facility?.location_code && /^LOC/i.test(facility.location_code)) {
+    console.warn(`Skipping event for facility ${facility.id}: invalid CMA-CGM location_code ${facility.location_code}`);
+    return { skipped: true, reason: 'invalid_location_code' };
+  }
+
   const payload = build(eventPayload);
 
   if (config.active_option === 'option1') {

@@ -175,11 +175,6 @@ async function ensureIndex(connection, tableName, indexName, definition) {
 
 async function ensureSchemaCompatibility(connection) {
   await connection.query(
-    `UPDATE facilities
-     SET location_code = CONCAT('LOC', LPAD(id, 6, '0'))
-     WHERE location_code IS NULL OR TRIM(location_code) = ''`
-  );
-  await connection.query(
     `ALTER TABLE facilities
      MODIFY COLUMN location_code VARCHAR(20) NOT NULL`
   );

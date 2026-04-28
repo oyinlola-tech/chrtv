@@ -9,6 +9,12 @@ function badRequest(message) {
   return error;
 }
 
+function unprocessableEntity(message) {
+  const error = new Error(message);
+  error.status = 422;
+  return error;
+}
+
 function validateFacilityBody(body) {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
     throw badRequest('Request body must be a JSON object');
@@ -23,7 +29,7 @@ function validateFacilityBody(body) {
   }
 
   if (typeof body.location_code !== 'string' || body.location_code.trim().length === 0) {
-    throw badRequest('location_code is required');
+    throw unprocessableEntity('location_code is required');
   }
 
   const latitude = Number(body.latitude);
