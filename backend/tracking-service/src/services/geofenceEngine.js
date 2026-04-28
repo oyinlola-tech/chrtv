@@ -17,7 +17,7 @@ function distanceMeters(aLat, aLng, bLat, bLng) {
 }
 
 function evaluate(positionPayload, assignment) {
-  if (!assignment || !Array.isArray(assignment.facilities)) {
+  if (!assignment || assignment.useDeviceGeofence || !Array.isArray(assignment.facilities)) {
     return [];
   }
 
@@ -74,4 +74,3 @@ function evaluate(positionPayload, assignment) {
 module.exports = {
   evaluate,
 };
-

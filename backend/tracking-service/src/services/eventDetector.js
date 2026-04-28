@@ -6,7 +6,20 @@ async function getAssignment(imei) {
   const baseUrl = getInternalServiceUrl('ASSET_SERVICE_URL');
   try {
     const response = await httpClient.get(`${baseUrl}/internal/assignment/${imei}`);
-    return response.data.assignment || null;
+    const assignment = response.data.assignment || null;
+    if (!assignment) {
+      return null;
+    }
+
+    assignment.useDeviceGeofence = (
+      Array.isArray(assignment.facilities) &&
+      assignment.facilities.length > 0 &&
+      assignment.facilities.every(
+        (facility) => typeof facility.area_name === 'string' && facility.area_name.trim().length > 0
+      )
+    );
+
+    return assignment;
   } catch (error) {
     if (error.response?.status === 404) {
       return null;

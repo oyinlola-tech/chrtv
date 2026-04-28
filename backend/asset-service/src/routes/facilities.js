@@ -22,6 +22,10 @@ function validateFacilityBody(body) {
     throw badRequest('facility_type_code is invalid');
   }
 
+  if (typeof body.location_code !== 'string' || body.location_code.trim().length === 0) {
+    throw badRequest('location_code is required');
+  }
+
   const latitude = Number(body.latitude);
   const longitude = Number(body.longitude);
   const radius = Number(body.radius_meters ?? 500);
@@ -40,7 +44,7 @@ function validateFacilityBody(body) {
   }
 
   body.name = body.name.trim();
-  body.location_code = typeof body.location_code === 'string' ? body.location_code.trim() : body.location_code;
+  body.location_code = body.location_code.trim();
   body.latitude = latitude;
   body.longitude = longitude;
   body.radius_meters = radius;

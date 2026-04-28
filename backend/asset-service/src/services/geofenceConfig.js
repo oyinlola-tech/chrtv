@@ -1,6 +1,7 @@
 const { createHttpClient } = require('../../../shared/http');
 const { getInternalServiceUrl } = require('../../../shared/internalServices');
 const assignmentModel = require('../models/assignment');
+const orderModel = require('../models/order');
 
 const client = createHttpClient();
 
@@ -35,6 +36,7 @@ async function sendToDevice(assignmentId) {
         keyword: '121',
         params,
       });
+      await orderModel.setAreaName(enriched.transport_order_id, facility.id, area);
       queued += 1;
     } catch (error) {
       if (error.response?.status === 404) {

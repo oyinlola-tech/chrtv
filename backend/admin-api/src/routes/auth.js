@@ -1,5 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const { query } = require('../../../shared/db');
 const { getRequiredEnv } = require('../../../shared/env');
 const { signUser, verifyToken } = require('../../../shared/jwt');

@@ -15,6 +15,15 @@ function parseAddress(addressJson) {
 }
 
 function build(eventPayload) {
+  const facility = eventPayload.facility || null;
+  if (!facility) {
+    throw new Error('Facility context is required for event payloads');
+  }
+
+  if (!facility.location_code) {
+    throw new Error(`Facility ${facility.id} missing location_code`);
+  }
+
   return {
     equipmentReference: eventPayload.equipmentReference,
     eventCreatedDateTime: new Date(eventPayload.timestamp).toISOString(),
@@ -30,12 +39,12 @@ function build(eventPayload) {
     transportationPhase: eventPayload.transportationPhase,
     transportOrder: eventPayload.transportOrder || '',
     eventLocation: {
-      facilityTypeCode: eventPayload.facility?.facility_type_code || '',
-      locationCode: eventPayload.facility?.location_code || '',
-      locationName: eventPayload.facility?.name || '',
+      facilityTypeCode: facility.facility_type_code || '',
+      locationCode: facility.location_code,
+      locationName: facility.name || '',
       latitude: eventPayload.lat,
       longitude: eventPayload.lng,
-      address: parseAddress(eventPayload.facility?.address_json),
+      address: parseAddress(facility.address_json),
     },
   };
 }
@@ -55,4 +64,3 @@ module.exports = {
   build,
   buildAndSend,
 };
-

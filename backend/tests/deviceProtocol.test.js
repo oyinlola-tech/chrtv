@@ -35,6 +35,8 @@ test('treats GPS as invalid unless both fix flags are valid', () => {
 
   assert.equal(payload.type, 'position');
   assert.equal(payload.data.gpsValid, false);
+  assert.equal(payload.data.latitude, null);
+  assert.equal(payload.data.longitude, null);
 });
 
 test('parses extended 001 packets with embedded fuel and temperature prefix', () => {

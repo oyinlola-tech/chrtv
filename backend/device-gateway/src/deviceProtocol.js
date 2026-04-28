@@ -69,6 +69,9 @@ function parsePosition(parts, rawMessage) {
   const fuel1 = normalized.fields[14] || '';
   const fuel2OrMileage = normalized.fields[15] || '';
   const temperature = normalized.fields[16] || '';
+  const gpsValid = gpsSignal === 'F' && gpsValidity === 'A';
+  const latitude = gpsSignal === 'L' ? null : convertNmeaToDecimal(latRaw, latHemisphere);
+  const longitude = gpsSignal === 'L' ? null : convertNmeaToDecimal(lonRaw, lonHemisphere);
 
   return {
     imei: parts[0].replace(/^imei:/i, ''),
@@ -79,11 +82,11 @@ function parsePosition(parts, rawMessage) {
       dateToken,
       phone,
       gpsSignal,
-      gpsValid: gpsSignal === 'F' && gpsValidity === 'A',
+      gpsValid,
       utcFixTime: fixTime,
       utcTimestamp: parseUtcTimestamp(dateToken, fixTime),
-      latitude: convertNmeaToDecimal(latRaw, latHemisphere),
-      longitude: convertNmeaToDecimal(lonRaw, lonHemisphere),
+      latitude,
+      longitude,
       speed: speed ? Number(speed) : null,
       heading: headingOrAddress && headingOrAddress !== '1' ? Number(headingOrAddress) : null,
       addressRequest: headingOrAddress === '1',
@@ -94,6 +97,8 @@ function parsePosition(parts, rawMessage) {
       fuel2Percent: parsePercent(fuel2OrMileage),
       mileageKm: parseMileage(fuel2OrMileage),
       temperature: extendedTemperature ?? (temperature ? Number(temperature) : null),
+      lac: gpsSignal === 'L' ? latRaw || null : null,
+      cellId: gpsSignal === 'L' ? lonRaw || null : null,
       extendedPrefix: normalized.extendedPrefix,
     },
   };

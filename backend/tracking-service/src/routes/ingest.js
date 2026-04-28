@@ -12,18 +12,6 @@ const {
 const router = express.Router();
 const ALLOWED_TYPES = new Set(['position', 'geofence', 'alarm', 'unknown']);
 
-function hasDeviceSideGeofence(assignment) {
-  if (!assignment || !Array.isArray(assignment.facilities)) {
-    return false;
-  }
-
-  return (
-    assignment.facilities.length > 0 &&
-    assignment.facilities.length <= 5 &&
-    assignment.facilities.every((facility) => facility.area_name)
-  );
-}
-
 function hasUsableGps(payload) {
   return (
     payload?.data?.gpsValid === true &&
@@ -70,7 +58,7 @@ router.post('/', requireLoopback, async (req, res) => {
     if (payload.type === 'position' && assignment && hasUsableGps(payload)) {
       await eventDetector.sendCoordinate(payload, assignment);
 
-      if (!hasDeviceSideGeofence(assignment)) {
+      if (!assignment.useDeviceGeofence) {
         const events = geofenceEngine.evaluate(payload, assignment);
         for (const event of events) {
           const enriched = await eventDetector.enrichEvent(event, assignment);

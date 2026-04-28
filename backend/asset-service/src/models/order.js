@@ -119,6 +119,15 @@ async function getOrderFacilities(orderId) {
   );
 }
 
+async function setAreaName(orderId, facilityId, areaName) {
+  await query(
+    `UPDATE order_facility_sequence
+     SET area_name = ?
+     WHERE transport_order_id = ? AND facility_id = ?`,
+    [areaName, orderId, facilityId]
+  );
+}
+
 module.exports = {
   listOrders,
   getOrderById,
@@ -126,5 +135,5 @@ module.exports = {
   updateOrder,
   deleteOrder,
   getOrderFacilities,
+  setAreaName,
 };
-

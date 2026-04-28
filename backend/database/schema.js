@@ -24,7 +24,7 @@ const schemaStatements = [
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     facility_type_code ENUM('DEPO','CLOC','POTE','RAMP') NOT NULL,
-    location_code VARCHAR(20),
+    location_code VARCHAR(20) NOT NULL,
     latitude DECIMAL(10,7) NOT NULL,
     longitude DECIMAL(10,7) NOT NULL,
     radius_meters INT DEFAULT 500,
@@ -174,6 +174,15 @@ async function ensureIndex(connection, tableName, indexName, definition) {
 }
 
 async function ensureSchemaCompatibility(connection) {
+  await connection.query(
+    `UPDATE facilities
+     SET location_code = CONCAT('LOC', LPAD(id, 6, '0'))
+     WHERE location_code IS NULL OR TRIM(location_code) = ''`
+  );
+  await connection.query(
+    `ALTER TABLE facilities
+     MODIFY COLUMN location_code VARCHAR(20) NOT NULL`
+  );
   await ensureColumn(
     connection,
     'assignments',
