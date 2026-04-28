@@ -7,7 +7,9 @@ const { validateDashboardLimit } = require('../middleware/validators');
 
 const client = createHttpClient();
 const router = express.Router();
-const trackingBase = getInternalServiceUrl('TRACKING_SERVICE_URL');
+function getTrackingBase() {
+  return getInternalServiceUrl('TRACKING_SERVICE_URL');
+}
 
 router.get('/stats', asyncHandler(async (_req, res) => {
   const stats = await dataAggregator.getStats();
@@ -15,14 +17,14 @@ router.get('/stats', asyncHandler(async (_req, res) => {
 }));
 
 router.get('/positions', validateDashboardLimit, asyncHandler(async (req, res) => {
-  const response = await client.get(`${trackingBase}/positions/recent`, {
+  const response = await client.get(`${getTrackingBase()}/positions/recent`, {
     params: { limit: req.query.limit || 100 },
   });
   res.json(response.data);
 }));
 
 router.get('/events', asyncHandler(async (_req, res) => {
-  const response = await client.get(`${trackingBase}/events/recent`);
+  const response = await client.get(`${getTrackingBase()}/events/recent`);
   res.json(response.data);
 }));
 

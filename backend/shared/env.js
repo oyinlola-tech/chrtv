@@ -5,7 +5,10 @@ let loaded = false;
 
 function loadEnv() {
   if (!loaded) {
-    dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+    dotenv.config({
+      path: path.resolve(__dirname, '../../.env'),
+      quiet: true,
+    });
     loaded = true;
   }
 }
@@ -23,4 +26,3 @@ module.exports = {
   loadEnv,
   getRequiredEnv,
 };
-

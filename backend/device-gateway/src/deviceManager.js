@@ -1,6 +1,11 @@
 const devices = new Map();
 
 function register(imei, socket) {
+  const existing = devices.get(imei);
+  if (existing?.socket && existing.socket !== socket && !existing.socket.destroyed) {
+    existing.socket.destroy();
+  }
+
   devices.set(imei, {
     imei,
     socket,
@@ -16,7 +21,16 @@ function touch(imei) {
   }
 }
 
+function setSocketImei(socket, imei) {
+  socket.__imei = imei;
+}
+
 function unregisterBySocket(socket) {
+  if (socket.__imei && devices.get(socket.__imei)?.socket === socket) {
+    devices.delete(socket.__imei);
+    return;
+  }
+
   for (const [imei, device] of devices.entries()) {
     if (device.socket === socket) {
       devices.delete(imei);
@@ -41,8 +55,8 @@ function listDevices() {
 module.exports = {
   register,
   touch,
+  setSocketImei,
   unregisterBySocket,
   getSocket,
   listDevices,
 };
-

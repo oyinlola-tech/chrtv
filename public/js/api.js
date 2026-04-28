@@ -17,14 +17,29 @@ export function clearSession() {
 
 export function getUser() {
   const raw = localStorage.getItem(USER_KEY);
-  return raw ? JSON.parse(raw) : null;
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch (_error) {
+    clearSession();
+    return null;
+  }
+}
+
+function handleUnauthorized(response) {
+  if (response.status === 401 || response.status === 403) {
+    clearSession();
+    if (window.location.pathname !== '/auth/login') {
+      window.location.href = '/auth/login';
+    }
+  }
 }
 
 export async function request(path, options = {}) {
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(options.headers || {}),
-  };
+  const headers = { ...(options.headers || {}) };
+  if (options.body != null && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
   const token = getToken();
   if (token) {
     headers.Authorization = `Bearer ${token}`;
@@ -39,6 +54,7 @@ export async function request(path, options = {}) {
   const payload = isJson ? await response.json() : await response.text();
 
   if (!response.ok) {
+    handleUnauthorized(response);
     throw new Error(payload.error || payload.message || 'Request failed');
   }
 
@@ -53,8 +69,12 @@ export const api = {
   dashboardEvents: () => request('/api/dashboard/events'),
   orders: () => request('/api/orders'),
   createOrder: (body) => request('/api/orders', { method: 'POST', body: JSON.stringify(body) }),
+  updateOrder: (id, body) => request(`/api/orders/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  deleteOrder: (id) => request(`/api/orders/${id}`, { method: 'DELETE' }),
   facilities: () => request('/api/facilities'),
   createFacility: (body) => request('/api/facilities', { method: 'POST', body: JSON.stringify(body) }),
+  updateFacility: (id, body) => request(`/api/facilities/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  deleteFacility: (id) => request(`/api/facilities/${id}`, { method: 'DELETE' }),
   assignments: () => request('/api/assignments'),
   createAssignment: (body) => request('/api/assignments', { method: 'POST', body: JSON.stringify(body) }),
   devices: () => request('/api/devices'),
@@ -65,4 +85,3 @@ export const api = {
   users: () => request('/api/users'),
   createUser: (body) => request('/api/users', { method: 'POST', body: JSON.stringify(body) }),
 };
-

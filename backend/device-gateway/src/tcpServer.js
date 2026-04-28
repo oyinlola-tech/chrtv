@@ -3,20 +3,29 @@ const deviceManager = require('./deviceManager');
 const deviceProtocol = require('./deviceProtocol');
 const eventPublisher = require('./eventPublisher');
 
+const MAX_BUFFER_LENGTH = 16 * 1024;
+const MAX_FRAME_LENGTH = 2048;
+
 function handleFrame(frame, socket) {
   const trimmed = String(frame).trim();
   if (!trimmed) {
     return;
   }
 
+  if (trimmed.length > MAX_FRAME_LENGTH) {
+    return;
+  }
+
   if (/^##,imei:\d{15},A;?$/i.test(trimmed)) {
     const imei = trimmed.match(/imei:(\d{15})/i)[1];
+    deviceManager.setSocketImei(socket, imei);
     deviceManager.register(imei, socket);
     socket.write('LOAD\n');
     return;
   }
 
   if (/^\d{15}$/.test(trimmed)) {
+    deviceManager.setSocketImei(socket, trimmed);
     deviceManager.touch(trimmed);
     socket.write('ON\n');
     return;
@@ -25,6 +34,7 @@ function handleFrame(frame, socket) {
   if (trimmed.startsWith('imei:')) {
     const parsed = deviceProtocol.parse(trimmed);
     if (parsed) {
+      deviceManager.setSocketImei(socket, parsed.imei);
       deviceManager.touch(parsed.imei);
       eventPublisher.publish(parsed).catch((error) => {
         console.error('Failed to publish device payload', error.message);
@@ -35,15 +45,27 @@ function handleFrame(frame, socket) {
 
 function start() {
   const tcpPort = Number(process.env.DGW_PORT || 5000);
+  const tcpHost = process.env.DGW_HOST || '127.0.0.1';
   const server = net.createServer((socket) => {
     let buffer = '';
+    socket.setKeepAlive(true, 30_000);
+    socket.setNoDelay(true);
+    socket.setTimeout(120_000);
 
     socket.on('data', (chunk) => {
       buffer += chunk.toString();
+      if (buffer.length > MAX_BUFFER_LENGTH) {
+        socket.destroy();
+        return;
+      }
       buffer = buffer.replace(/\r/g, '');
       const frames = buffer.split(/\n|;/);
       buffer = frames.pop() || '';
       frames.forEach((frame) => handleFrame(frame, socket));
+    });
+
+    socket.on('timeout', () => {
+      socket.destroy();
     });
 
     socket.on('close', () => {
@@ -55,8 +77,13 @@ function start() {
     });
   });
 
-  server.listen(tcpPort, () => {
-    console.log(`device-gateway tcp listening on ${tcpPort}`);
+  server.maxConnections = Number(process.env.DGW_MAX_CONNECTIONS || 5000);
+  server.on('error', (error) => {
+    console.error('device-gateway tcp server error', error.message);
+  });
+
+  server.listen(tcpPort, tcpHost, () => {
+    console.log(`device-gateway tcp listening on ${tcpHost}:${tcpPort}`);
   });
 }
 

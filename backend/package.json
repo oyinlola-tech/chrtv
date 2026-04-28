@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "dev": "node scripts/start-all.js",
     "schema": "node database/schema.js",
     "start": "node scripts/start-all.js",
     "start:device-gateway": "node device-gateway/server.js",
@@ -10,6 +11,8 @@
     "start:asset-service": "node asset-service/server.js",
     "start:integration-service": "node integration-service/server.js",
     "start:admin-api": "node admin-api/server.js",
+    "test": "node --test",
+    "check": "powershell -NoProfile -Command \"Get-ChildItem -Recurse -File -Filter *.js | Where-Object { $_.FullName -notmatch '\\\\node_modules\\\\' } | ForEach-Object { node --check $_.FullName }\"",
     "swagger:generate": "node scripts/generate-swagger.js",
     "security:audit": "npm audit --omit=dev"
   },
@@ -18,8 +21,8 @@
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "express-rate-limit": "^7.5.0",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.4.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.22.3",

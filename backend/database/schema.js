@@ -39,6 +39,9 @@ const schemaStatements = [
     start_time DATETIME,
     end_time DATETIME,
     is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_assignment_imei_active (imei, is_active),
     FOREIGN KEY (transport_order_id) REFERENCES transport_orders(id)
   )`,
   `CREATE TABLE IF NOT EXISTS order_facility_sequence (
@@ -67,7 +70,8 @@ const schemaStatements = [
     mileage_km FLOAT,
     gps_valid BOOLEAN,
     raw_message TEXT,
-    INDEX idx_imei_time (imei, utc_timestamp)
+    INDEX idx_imei_time (imei, utc_timestamp),
+    INDEX idx_position_time (utc_timestamp)
   )`,
   `CREATE TABLE IF NOT EXISTS integration_config (
     id INT PRIMARY KEY DEFAULT 1,
@@ -84,19 +88,94 @@ const schemaStatements = [
     request_payload JSON,
     response_http_code INT,
     response_body TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_integration_logs_created (created_at)
   )`,
   `CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role ENUM('admin','operator') DEFAULT 'operator',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_users_created (created_at)
   )`,
   `INSERT INTO integration_config (id, active_option, option1_coordinates_interval_seconds, option1_api_base_url, option1_auth_token, option2_settings_json)
    VALUES (1, 'option1', 600, '', '', '{}')
    ON DUPLICATE KEY UPDATE id = id`
 ];
+
+async function columnExists(connection, tableName, columnName) {
+  const [rows] = await connection.execute(
+    `SELECT 1
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?
+     LIMIT 1`,
+    [dbName, tableName, columnName]
+  );
+  return rows.length > 0;
+}
+
+async function indexExists(connection, tableName, indexName) {
+  const [rows] = await connection.execute(
+    `SELECT 1
+     FROM information_schema.STATISTICS
+     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND INDEX_NAME = ?
+     LIMIT 1`,
+    [dbName, tableName, indexName]
+  );
+  return rows.length > 0;
+}
+
+async function ensureColumn(connection, tableName, columnName, definition) {
+  if (!(await columnExists(connection, tableName, columnName))) {
+    await connection.execute(`ALTER TABLE \`${tableName}\` ADD COLUMN ${definition}`);
+  }
+}
+
+async function ensureIndex(connection, tableName, indexName, definition) {
+  if (!(await indexExists(connection, tableName, indexName))) {
+    await connection.execute(`ALTER TABLE \`${tableName}\` ADD ${definition}`);
+  }
+}
+
+async function ensureSchemaCompatibility(connection) {
+  await ensureColumn(
+    connection,
+    'assignments',
+    'created_at',
+    '`created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+  );
+  await ensureColumn(
+    connection,
+    'assignments',
+    'updated_at',
+    '`updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
+  );
+  await ensureIndex(
+    connection,
+    'assignments',
+    'idx_assignment_imei_active',
+    'INDEX `idx_assignment_imei_active` (`imei`, `is_active`)'
+  );
+  await ensureIndex(
+    connection,
+    'device_positions',
+    'idx_position_time',
+    'INDEX `idx_position_time` (`utc_timestamp`)'
+  );
+  await ensureIndex(
+    connection,
+    'integration_logs',
+    'idx_integration_logs_created',
+    'INDEX `idx_integration_logs_created` (`created_at`)'
+  );
+  await ensureIndex(
+    connection,
+    'users',
+    'idx_users_created',
+    'INDEX `idx_users_created` (`created_at`)'
+  );
+}
 
 async function runSchema() {
   const connection = await mysql.createConnection({
@@ -111,6 +190,7 @@ async function runSchema() {
     for (const statement of schemaStatements) {
       await connection.execute(statement);
     }
+    await ensureSchemaCompatibility(connection);
     console.log('Schema initialized successfully.');
   } finally {
     await connection.end();

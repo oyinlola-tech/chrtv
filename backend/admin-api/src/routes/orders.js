@@ -9,64 +9,66 @@ const {
 
 const client = createHttpClient();
 const router = express.Router();
-const base = getInternalServiceUrl('ASSET_SERVICE_URL');
+function getBase() {
+  return getInternalServiceUrl('ASSET_SERVICE_URL');
+}
 
 router.get('/orders', asyncHandler(async (_req, res) => {
-  const response = await client.get(`${base}/orders`);
+  const response = await client.get(`${getBase()}/orders`);
   res.json(response.data);
 }));
 
 router.post('/orders', requireJsonObjectBody, asyncHandler(async (req, res) => {
-  const response = await client.post(`${base}/orders`, req.body);
+  const response = await client.post(`${getBase()}/orders`, req.body);
   res.status(response.status).json(response.data);
 }));
 
 router.put('/orders/:id', validateNumericIdParam(), requireJsonObjectBody, asyncHandler(async (req, res) => {
   const id = String(Number.parseInt(req.params.id, 10));
-  const response = await client.put(`${base}/orders/${id}`, req.body);
+  const response = await client.put(`${getBase()}/orders/${id}`, req.body);
   res.json(response.data);
 }));
 
 router.delete('/orders/:id', validateNumericIdParam(), asyncHandler(async (req, res) => {
   const id = String(Number.parseInt(req.params.id, 10));
-  const response = await client.delete(`${base}/orders/${id}`);
+  const response = await client.delete(`${getBase()}/orders/${id}`);
   res.json(response.data);
 }));
 
 router.get('/facilities', asyncHandler(async (_req, res) => {
-  const response = await client.get(`${base}/facilities`);
+  const response = await client.get(`${getBase()}/facilities`);
   res.json(response.data);
 }));
 
 router.post('/facilities', requireJsonObjectBody, asyncHandler(async (req, res) => {
-  const response = await client.post(`${base}/facilities`, req.body);
+  const response = await client.post(`${getBase()}/facilities`, req.body);
   res.status(response.status).json(response.data);
 }));
 
 router.put('/facilities/:id', validateNumericIdParam(), requireJsonObjectBody, asyncHandler(async (req, res) => {
   const id = String(Number.parseInt(req.params.id, 10));
-  const response = await client.put(`${base}/facilities/${id}`, req.body);
+  const response = await client.put(`${getBase()}/facilities/${id}`, req.body);
   res.json(response.data);
 }));
 
 router.delete('/facilities/:id', validateNumericIdParam(), asyncHandler(async (req, res) => {
   const id = String(Number.parseInt(req.params.id, 10));
-  const response = await client.delete(`${base}/facilities/${id}`);
+  const response = await client.delete(`${getBase()}/facilities/${id}`);
   res.json(response.data);
 }));
 
 router.get('/assignments', asyncHandler(async (_req, res) => {
-  const response = await client.get(`${base}/assignments`);
+  const response = await client.get(`${getBase()}/assignments`);
   res.json(response.data);
 }));
 
 router.post('/assignments', requireJsonObjectBody, asyncHandler(async (req, res) => {
-  const response = await client.post(`${base}/assignments`, req.body);
+  const response = await client.post(`${getBase()}/assignments`, req.body);
   res.status(response.status).json(response.data);
 }));
 
 router.put('/assignments/:id', validateNumericIdParam(), requireJsonObjectBody, asyncHandler(async (req, res) => {
-  const response = await client.put(`${base}/assignments/${req.params.id}`, req.body);
+  const response = await client.put(`${getBase()}/assignments/${req.params.id}`, req.body);
   res.json(response.data);
 }));
 

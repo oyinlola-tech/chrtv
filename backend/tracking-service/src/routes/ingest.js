@@ -5,6 +5,7 @@ const geofenceEngine = require('../services/geofenceEngine');
 const eventDetector = require('../services/eventDetector');
 
 const router = express.Router();
+const ALLOWED_TYPES = new Set(['position', 'geofence', 'alarm', 'unknown']);
 
 function hasDeviceSideGeofence(assignment) {
   if (!assignment || !Array.isArray(assignment.facilities)) {
@@ -29,8 +30,16 @@ function hasUsableGps(payload) {
 router.post('/', async (req, res) => {
   const payload = new Position(req.body || {});
 
-  if (!payload.imei || !payload.type) {
+  if (!/^\d{15,20}$/.test(String(payload.imei || '')) || !payload.type) {
     return res.status(400).json({ error: 'imei and type are required' });
+  }
+
+  if (!ALLOWED_TYPES.has(payload.type)) {
+    return res.status(400).json({ error: 'Unsupported payload type' });
+  }
+
+  if (typeof payload.data !== 'object' || payload.data === null || Array.isArray(payload.data)) {
+    payload.data = {};
   }
 
   try {

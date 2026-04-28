@@ -1,3 +1,12 @@
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function createPositionMap(elementId, center = [6.5244, 3.3792], zoom = 5) {
   const map = L.map(elementId).setView(center, zoom);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -17,7 +26,7 @@ export function renderPositionMarkers(map, positions) {
       fillOpacity: 0.9,
       weight: 2
     }).addTo(map);
-    marker.bindPopup(`<strong>${position.imei}</strong><br>${new Date(position.utc_timestamp).toLocaleString()}`);
+    marker.bindPopup(`<strong>${escapeHtml(position.imei)}</strong><br>${escapeHtml(new Date(position.utc_timestamp).toLocaleString())}`);
     bounds.push([position.latitude, position.longitude]);
   });
   if (bounds.length) {
@@ -38,4 +47,3 @@ export function enableFacilityPicker(map, onSelect) {
     onSelect({ lat, lng, updateRadius(radius) { circle.setRadius(radius); } });
   });
 }
-

@@ -9,7 +9,7 @@ This repository contains:
 - a microservice backend built with Node.js and Express
 - a MySQL schema bootstrap in JavaScript
 - an admin frontend built with HTML, Tailwind CSS, and vanilla JavaScript
-- clean frontend routes such as `/dashboard`, `/orders`, and `/devices`
+- clean frontend routes such as `/dashboard`, `/tracking`, `/shipments`, `/devices`, and `/settings`
 
 ## Architecture
 
@@ -79,7 +79,10 @@ CH RTV 1/
 |   |   +-- env.js
 |   |   +-- http.js
 |   |   +-- internalServices.js
-|   |   \-- jwt.js
+|   |   +-- jwt.js
+|   |   \-- serviceSecurity.js
+|   \-- tests/
+|       \-- deviceProtocol.test.js
 |   \-- tracking-service/
 |       +-- server.js
 |       \-- src/
@@ -95,7 +98,17 @@ CH RTV 1/
     +-- auth/
     |   \-- login/
     |       \-- index.html
+    +-- alerts/
+    |   \-- index.html
+    +-- geofences/
+    |   \-- index.html
     +-- dashboard/
+    |   \-- index.html
+    +-- reports/
+    |   \-- index.html
+    +-- settings/
+    |   \-- index.html
+    +-- shipments/
     |   \-- index.html
     +-- orders/
     |   \-- index.html
@@ -149,6 +162,7 @@ Copy [.env.example](/C:/Users/donri/Desktop/CH%20RTV%201/.env.example:1) to `.en
 - `INITIAL_ADMIN_USERNAME`
 - `INITIAL_ADMIN_PASSWORD`
 - service base URLs
+- loopback bind hosts such as `DGW_HOST` and `TS_HOST`
 - Option 1 CMA-CGM path values
 - all internal service URLs are required and are loaded from the root `.env`
 
@@ -178,7 +192,7 @@ npm run schema
 5. Start the stack:
 
 ```bash
-npm start
+npm run dev
 ```
 
 Generate or refresh the Swagger / OpenAPI file:
@@ -221,11 +235,18 @@ The frontend uses folder-based routes instead of `.html` URLs:
 
 - `/auth/login`
 - `/dashboard`
+- `/tracking`
+- `/fleet`
+- `/shipments`
+- `/alerts`
+- `/geofences`
 - `/orders`
 - `/assignments`
 - `/facilities`
 - `/devices`
 - `/integration`
+- `/reports`
+- `/settings`
 - `/users`
 
 ## Swagger / OpenAPI
@@ -273,29 +294,24 @@ Security hardening currently in place:
 - JWT secret is required from `.env`
 - the initial admin username and password come from `.env`
 - `helmet` headers are enabled on `admin-api`
+- internal HTTP services are loopback-only by default and use shared security headers
 - CORS is restricted by `ALLOWED_ORIGIN`
 - `express-rate-limit` is applied to auth, docs, reads, and writes
 - request body size is limited
 - sensitive admin routes use request validation
 - bootstrap is loopback-only
+- TCP gateway buffers and idle sockets are bounded
 - proxy errors are sanitized before they are returned to clients
 
 ## Verification Status
 
 Completed locally:
 
-- `npm install` in `backend/`
+- `npm run check`
+- `npm test`
 - `npm audit --omit=dev`
-- backend syntax validation with `node --check`
-- health endpoint verification for:
-  - `admin-api`
-  - `device-gateway` HTTP API
-  - `tracking-service`
-  - `asset-service`
 
-Current blocker:
-
-- `integration-service` depends on MySQL being available on `127.0.0.1:3306`
+End-to-end localhost startup still depends on MySQL being available on `127.0.0.1:3306` with the configured credentials.
 
 ## Useful Files
 

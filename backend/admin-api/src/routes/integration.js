@@ -6,20 +6,22 @@ const { requireJsonObjectBody, validateIntegrationConfigUpdate } = require('../m
 
 const client = createHttpClient();
 const router = express.Router();
-const base = getInternalServiceUrl('INTEGRATION_SERVICE_URL');
+function getBase() {
+  return getInternalServiceUrl('INTEGRATION_SERVICE_URL');
+}
 
 router.get('/config', asyncHandler(async (_req, res) => {
-  const response = await client.get(`${base}/config`);
+  const response = await client.get(`${getBase()}/config`);
   res.json(response.data);
 }));
 
 router.put('/config', requireJsonObjectBody, validateIntegrationConfigUpdate, asyncHandler(async (req, res) => {
-  const response = await client.put(`${base}/config`, req.body);
+  const response = await client.put(`${getBase()}/config`, req.body);
   res.json(response.data);
 }));
 
 router.get('/logs', asyncHandler(async (_req, res) => {
-  const response = await client.get(`${base}/logs/recent`);
+  const response = await client.get(`${getBase()}/logs/recent`);
   res.json(response.data);
 }));
 

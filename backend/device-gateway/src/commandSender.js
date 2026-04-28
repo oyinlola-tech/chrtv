@@ -2,7 +2,7 @@ const deviceManager = require('./deviceManager');
 
 function sendCommand(imei, command) {
   const socket = deviceManager.getSocket(imei);
-  if (!socket) {
+  if (!socket || socket.destroyed || !socket.writable) {
     throw new Error(`No active socket for IMEI ${imei}`);
   }
 
@@ -14,4 +14,3 @@ function sendCommand(imei, command) {
 module.exports = {
   sendCommand,
 };
-

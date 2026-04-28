@@ -2,13 +2,25 @@ import { clearSession, getUser } from './api.js';
 
 const navItems = [
   { href: '/dashboard', key: 'dashboard', label: 'Dashboard' },
-  { href: '/orders', key: 'orders', label: 'Orders' },
-  { href: '/assignments', key: 'assignments', label: 'Assignments' },
-  { href: '/facilities', key: 'facilities', label: 'Facilities' },
-  { href: '/devices', key: 'devices', label: 'Devices' },
-  { href: '/integration', key: 'integration', label: 'Integration' },
-  { href: '/users', key: 'users', label: 'Users' },
+  { href: '/tracking', key: 'tracking', label: 'Live Tracking' },
+  { href: '/fleet', key: 'fleet', label: 'Fleet Management' },
+  { href: '/shipments', key: 'shipments', label: 'Trips / Shipments' },
+  { href: '/alerts', key: 'alerts', label: 'Alerts' },
+  { href: '/geofences', key: 'geofences', label: 'Geofence Management' },
+  { href: '/devices', key: 'devices', label: 'Device Commands' },
+  { href: '/reports', key: 'reports', label: 'Reports' },
+  { href: '/settings', key: 'settings', label: 'Settings' },
+  { href: '/users', key: 'users', label: 'User Management' },
 ];
+
+export function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 export function protectPage() {
   if (!localStorage.getItem('chrtv_token')) {
@@ -29,7 +41,7 @@ export function formatDate(value) {
 export function flash(message, tone = 'slate') {
   const host = document.querySelector('[data-flash]');
   if (!host) return;
-  host.innerHTML = `<div class="rounded-2xl px-4 py-3 text-sm ${tone === 'success' ? 'bg-emerald-50 text-emerald-700' : tone === 'error' ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-700'}">${message}</div>`;
+  host.innerHTML = `<div class="rounded-2xl px-4 py-3 text-sm ${tone === 'success' ? 'bg-emerald-50 text-emerald-700' : tone === 'error' ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-700'}">${escapeHtml(message)}</div>`;
   setTimeout(() => {
     host.innerHTML = '';
   }, 3200);
@@ -56,8 +68,8 @@ export function renderShell(pageKey, title, subtitle, content) {
         <nav class="mt-8 grid gap-2">${nav}</nav>
         <div class="mt-8 rounded-[1.6rem] bg-[linear-gradient(135deg,_#081221,_#0f4c81)] p-5 text-white">
           <p class="text-xs uppercase tracking-[0.24em] text-orange-200">Current User</p>
-          <p class="mt-2 font-display text-lg">${activeUser?.username || 'Unknown'}</p>
-          <p class="text-sm text-slate-200">${activeUser?.role || 'operator'}</p>
+          <p class="mt-2 font-display text-lg">${escapeHtml(activeUser?.username || 'Unknown')}</p>
+          <p class="text-sm text-slate-200">${escapeHtml(activeUser?.role || 'operator')}</p>
         </div>
         <button id="logout-btn" class="mt-6 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100">Sign out</button>
       </aside>
@@ -80,8 +92,8 @@ export function renderShell(pageKey, title, subtitle, content) {
 
 export function card(label, value, accent = 'bg-white') {
   return `<article class="${accent} rounded-[1.8rem] border border-slate-200 p-5 shadow-sm">
-    <p class="text-xs uppercase tracking-[0.24em] text-slate-400">${label}</p>
-    <p class="mt-3 font-display text-3xl text-ink">${value}</p>
+    <p class="text-xs uppercase tracking-[0.24em] text-slate-400">${escapeHtml(label)}</p>
+    <p class="mt-3 font-display text-3xl text-ink">${escapeHtml(value)}</p>
   </article>`;
 }
 
