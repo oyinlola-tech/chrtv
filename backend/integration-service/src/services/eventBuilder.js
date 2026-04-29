@@ -25,6 +25,19 @@ function build(eventPayload) {
     throw new Error(`Facility ${facility.id} missing location_code`);
   }
 
+  const eventLocation = {
+    facilityTypeCode: facility.facility_type_code || '',
+    locationCode: facility.location_code,
+    locationName: facility.name || '',
+    latitude: eventPayload.lat,
+    longitude: eventPayload.lng,
+  };
+
+  const address = parseAddress(facility.address_json);
+  if (address !== undefined) {
+    eventLocation.address = address;
+  }
+
   return {
     equipmentReference: eventPayload.equipmentReference,
     eventCreatedDateTime: normalizeActTimestamp(
@@ -42,14 +55,7 @@ function build(eventPayload) {
     modeOfTransport: eventPayload.modeOfTransport || 'TRUCK',
     transportationPhase: eventPayload.transportationPhase,
     transportOrder: eventPayload.transportOrder || '',
-    eventLocation: {
-      facilityTypeCode: facility.facility_type_code || '',
-      locationCode: facility.location_code,
-      locationName: facility.name || '',
-      latitude: eventPayload.lat,
-      longitude: eventPayload.lng,
-      address: parseAddress(facility.address_json),
-    },
+    eventLocation,
   };
 }
 

@@ -33,16 +33,14 @@ function handleFrame(frame, socket) {
   if (/^##,imei:(\d{15}),A;?$/i.test(trimmed)) {
     const imei = trimmed.match(/imei:(\d{15})/i)[1];
     setDeviceIdentity(socket, imei);
-    // COBAN examples show a bare LOAD reply without CR/LF; we keep LF for field interoperability.
-    safeWrite(socket, 'LOAD\n');
+    safeWrite(socket, 'LOAD');
     return true;
   }
 
   // Heartbeat: XXXXXXXXXXXXXXX
   if (/^\d{15}$/.test(trimmed)) {
     setDeviceIdentity(socket, trimmed);
-    // COBAN examples show a bare ON reply without CR/LF; we keep LF for field interoperability.
-    safeWrite(socket, 'ON\n');
+    safeWrite(socket, 'ON');
     return true;
   }
 
