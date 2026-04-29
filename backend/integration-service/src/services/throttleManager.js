@@ -1,6 +1,7 @@
 const configModel = require('../models/config');
 const option1Client = require('./option1Client');
 const option2Stub = require('./option2Stub');
+const { normalizeActTimestamp } = require('../utils/actTimestamp');
 
 const latestByImei = new Map();
 let intervalRef = null;
@@ -29,7 +30,7 @@ async function flush() {
   for (const batchEntries of batches) {
     const batch = batchEntries.map(([, item]) => ({
       equipmentReference: item.assignment.equipment_reference,
-      eventCreatedDateTime: new Date(item.timestamp).toISOString(),
+      eventCreatedDateTime: normalizeActTimestamp(item.timestamp, `coordinate IMEI ${item.imei}`),
       originatorName: item.assignment.originator_name,
       partnerName: item.assignment.partner_name || ' ',
       carrierBookingReference: item.assignment.carrier_booking_ref || '',

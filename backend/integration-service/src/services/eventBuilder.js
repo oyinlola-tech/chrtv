@@ -1,6 +1,7 @@
 const configModel = require('../models/config');
 const option1Client = require('./option1Client');
 const option2Stub = require('./option2Stub');
+const { normalizeActTimestamp } = require('../utils/actTimestamp');
 
 function parseAddress(addressJson) {
   if (!addressJson) {
@@ -26,7 +27,10 @@ function build(eventPayload) {
 
   return {
     equipmentReference: eventPayload.equipmentReference,
-    eventCreatedDateTime: new Date(eventPayload.timestamp).toISOString(),
+    eventCreatedDateTime: normalizeActTimestamp(
+      eventPayload.timestamp,
+      `event ${eventPayload.event_type || 'unknown'} for IMEI ${eventPayload.imei || 'unknown'}`
+    ),
     originatorName: eventPayload.originatorName,
     partnerName: eventPayload.partnerName || ' ',
     eventType: 'TRANSPORT',

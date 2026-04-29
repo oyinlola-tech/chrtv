@@ -35,6 +35,7 @@ This repository contains:
 - COBAN TCP device ingestion and command handling
 - transport order, facility, assignment, and visibility workflows
 - integration support for CMA-CGM Option 1 and an Option 2 stub path
+- Option 2 remains a non-functional stub only; no S3PWEB API integration is implemented
 
 ## Core Services
 
@@ -116,6 +117,12 @@ Security controls currently documented or implemented include:
 - parameterized database queries
 
 Read [SECURITY.md](SECURITY.md) before sharing this repository, performing security testing, or deploying to any environment outside localhost.
+
+## COBAN Protocol Notes
+
+- Login and heartbeat handling follow the COBAN protocol examples.
+- The gateway currently keeps a trailing LF on `LOAD`, `ON`, and outbound `**,imei:...` commands for compatibility with tolerant devices, even though the protocol examples show bare strings.
+- If a field device requires exact bare replies, remove the trailing LF in the gateway command/reply paths before production rollout.
 
 ## Repository Structure
 

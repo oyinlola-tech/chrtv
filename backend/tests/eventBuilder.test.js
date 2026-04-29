@@ -107,3 +107,28 @@ test('buildAndSend passes through location codes that start with LOC', async () 
   configModel.getConfig = originalGetConfig;
   option1Client.sendEvent = originalSendEvent;
 });
+
+test('build clamps future ACT timestamps before sending events', () => {
+  const payload = eventBuilder.build({
+    imei: '123456789012345',
+    event_type: 'DEPA',
+    timestamp: '2099-04-28T08:00:00.000Z',
+    originatorName: 'Carrier Asia',
+    partnerName: 'Partner',
+    equipmentReference: 'CONT-123456',
+    carrierBookingReference: 'CBR-001',
+    transportOrder: 'ORD-2024-001',
+    transportationPhase: 'EXPORT',
+    modeOfTransport: 'TRUCK',
+    lat: 6.8577333,
+    lng: 3.3864,
+    facility: {
+      id: 1,
+      facility_type_code: 'DEPO',
+      location_code: 'LOC-DEMO',
+      name: 'Lagos Depot',
+    },
+  });
+
+  assert.equal(new Date(payload.eventCreatedDateTime).getTime() <= Date.now() + 1000, true);
+});

@@ -48,6 +48,7 @@ function sendCommand(imei, command, options = {}) {
     throw new Error(`No active socket for IMEI ${imei}`);
   }
 
+  // COBAN examples omit a line terminator; we keep LF because deployed trackers are already tolerant of it.
   const formatted = `**,imei:${imei},${command}\n`;
   socket.write(formatted);
 

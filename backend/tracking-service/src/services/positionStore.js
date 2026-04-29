@@ -2,6 +2,15 @@ const { query } = require('../../../shared/db');
 
 const recentEvents = [];
 
+function hasPersistableCoordinates(data = {}) {
+  return (
+    data.latitude != null &&
+    data.longitude != null &&
+    Number.isFinite(Number(data.latitude)) &&
+    Number.isFinite(Number(data.longitude))
+  );
+}
+
 function toNullableDate(value) {
   if (!value) {
     return null;
@@ -13,6 +22,10 @@ function toNullableDate(value) {
 
 async function storePosition(payload) {
   const data = payload.data || {};
+  if (!hasPersistableCoordinates(data)) {
+    return { stored: false, reason: 'missing_coordinates' };
+  }
+
   const utcTimestamp = toNullableDate(data.utcTimestamp);
   const record = [
     payload.imei,
@@ -62,6 +75,8 @@ async function storePosition(payload) {
       record
     );
   }
+
+  return { stored: true };
 }
 
 function pushRecentEvent(event) {
@@ -96,6 +111,7 @@ async function getRecentPositions(limit = 50) {
 }
 
 module.exports = {
+  hasPersistableCoordinates,
   storePosition,
   pushRecentEvent,
   getRecentEvents,
