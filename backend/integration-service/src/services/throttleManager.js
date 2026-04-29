@@ -1,7 +1,7 @@
 const configModel = require('../models/config');
 const option1Client = require('./option1Client');
 const option2Stub = require('./option2Stub');
-const { normalizeActTimestamp } = require('../utils/actTimestamp');
+const { validateActTimestamp } = require('../utils/actTimestamp');
 
 const latestByImei = new Map();
 let intervalRef = null;
@@ -28,19 +28,37 @@ async function flush() {
   const batches = chunkArray(entries, Math.max(1, Number(process.env.OPTION1_MAX_BATCH_SIZE || 200)));
 
   for (const batchEntries of batches) {
-    const batch = batchEntries.map(([, item]) => ({
-      equipmentReference: item.assignment.equipment_reference,
-      eventCreatedDateTime: normalizeActTimestamp(item.timestamp, `coordinate IMEI ${item.imei}`),
-      originatorName: item.assignment.originator_name,
-      partnerName: item.assignment.partner_name || ' ',
-      carrierBookingReference: item.assignment.carrier_booking_ref || '',
-      modeOfTransport: item.assignment.mode_of_transport || 'TRUCK',
-      transportOrder: item.assignment.order_number || '',
-      eventLocation: {
-        latitude: item.lat,
-        longitude: item.lng,
-      },
-    }));
+    const validBatchEntries = [];
+    const batch = [];
+
+    for (const [imei, item] of batchEntries) {
+      try {
+        validateActTimestamp(item.timestamp, `coordinate IMEI ${item.imei}`);
+      } catch (error) {
+        console.warn(`Skipping coordinate for IMEI ${item.imei}: ${error.message}`);
+        latestByImei.delete(imei);
+        continue;
+      }
+
+      validBatchEntries.push([imei, item]);
+      batch.push({
+        equipmentReference: item.assignment.equipment_reference,
+        eventCreatedDateTime: item.timestamp,
+        originatorName: item.assignment.originator_name,
+        partnerName: item.assignment.partner_name || ' ',
+        carrierBookingReference: item.assignment.carrier_booking_ref || '',
+        modeOfTransport: item.assignment.mode_of_transport || 'TRUCK',
+        transportOrder: item.assignment.order_number || '',
+        eventLocation: {
+          latitude: item.lat,
+          longitude: item.lng,
+        },
+      });
+    }
+
+    if (!batch.length) {
+      continue;
+    }
 
     if (config.active_option === 'option1') {
       await option1Client.sendCoordinates(batch);
@@ -48,7 +66,7 @@ async function flush() {
       await option2Stub.sendCoordinates(batch);
     }
 
-    batchEntries.forEach(([imei]) => latestByImei.delete(imei));
+    validBatchEntries.forEach(([imei]) => latestByImei.delete(imei));
   }
 }
 

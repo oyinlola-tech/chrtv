@@ -102,7 +102,7 @@ const schemaStatements = [
     active_option ENUM('option1','option2') DEFAULT 'option1',
     option1_coordinates_interval_seconds INT DEFAULT 600,
     option1_api_base_url VARCHAR(255),
-    option1_auth_token VARCHAR(255),
+    option1_auth_token TEXT,
     option2_settings_json TEXT,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   )`,
@@ -171,6 +171,17 @@ async function indexExists(connection, tableName, indexName) {
   return rows.length > 0;
 }
 
+async function getColumnDataType(connection, tableName, columnName) {
+  const [rows] = await connection.execute(
+    `SELECT DATA_TYPE
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?
+     LIMIT 1`,
+    [dbName, tableName, columnName]
+  );
+  return rows[0]?.DATA_TYPE?.toLowerCase() || null;
+}
+
 async function ensureColumn(connection, tableName, columnName, definition) {
   if (!(await columnExists(connection, tableName, columnName))) {
     await connection.query(`ALTER TABLE \`${tableName}\` ADD COLUMN ${definition}`);
@@ -236,6 +247,12 @@ async function ensureSchemaCompatibility(connection) {
     'idx_users_created',
     'INDEX `idx_users_created` (`created_at`)'
   );
+  if ((await getColumnDataType(connection, 'integration_config', 'option1_auth_token')) !== 'text') {
+    await connection.query(
+      `ALTER TABLE integration_config
+       MODIFY COLUMN option1_auth_token TEXT`
+    );
+  }
   await ensureColumn(
     connection,
     'users',

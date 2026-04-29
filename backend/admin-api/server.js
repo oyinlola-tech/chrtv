@@ -82,12 +82,13 @@ app.get('/', (_req, res) => {
 app.use(errorHandler);
 
 const port = Number(process.env.AA_PORT || 4000);
+const host = process.env.AA_HOST || '0.0.0.0';
 const server = http.createServer(app);
 server.keepAliveTimeout = Number(process.env.SERVER_KEEPALIVE_TIMEOUT_MS || 65000);
 server.headersTimeout = Number(process.env.SERVER_HEADERS_TIMEOUT_MS || 66000);
 server.requestTimeout = Number(process.env.SERVER_REQUEST_TIMEOUT_MS || 30000);
 
-server.listen(port, async () => {
+server.listen(port, host, async () => {
   try {
     const result = await ensureInitialAdmin();
     if (result.created) {
@@ -97,5 +98,5 @@ server.listen(port, async () => {
     console.error(`admin-api initial admin bootstrap failed: ${error.message}`);
   }
 
-  console.log(`admin-api listening on ${port}`);
+  console.log(`admin-api listening on ${host}:${port}`);
 });

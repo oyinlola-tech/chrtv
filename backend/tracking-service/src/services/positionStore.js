@@ -58,20 +58,20 @@ async function storePosition(payload) {
         (imei, utc_timestamp, latitude, longitude, speed, heading, altitude, acc_state, door_state, fuel1_percent, fuel2_percent, temperature, mileage_km, gps_valid, raw_message)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
-        utc_timestamp = VALUES(utc_timestamp),
-        latitude = VALUES(latitude),
-        longitude = VALUES(longitude),
-        speed = VALUES(speed),
-        heading = VALUES(heading),
-        altitude = VALUES(altitude),
-        acc_state = VALUES(acc_state),
-        door_state = VALUES(door_state),
-        fuel1_percent = VALUES(fuel1_percent),
-        fuel2_percent = VALUES(fuel2_percent),
-        temperature = VALUES(temperature),
-        mileage_km = VALUES(mileage_km),
-        gps_valid = VALUES(gps_valid),
-        raw_message = VALUES(raw_message)`,
+        utc_timestamp = GREATEST(utc_timestamp, VALUES(utc_timestamp)),
+        latitude = IF(VALUES(utc_timestamp) > utc_timestamp, VALUES(latitude), latitude),
+        longitude = IF(VALUES(utc_timestamp) > utc_timestamp, VALUES(longitude), longitude),
+        speed = IF(VALUES(utc_timestamp) > utc_timestamp, VALUES(speed), speed),
+        heading = IF(VALUES(utc_timestamp) > utc_timestamp, VALUES(heading), heading),
+        altitude = IF(VALUES(utc_timestamp) > utc_timestamp, VALUES(altitude), altitude),
+        acc_state = IF(VALUES(utc_timestamp) > utc_timestamp, VALUES(acc_state), acc_state),
+        door_state = IF(VALUES(utc_timestamp) > utc_timestamp, VALUES(door_state), door_state),
+        fuel1_percent = IF(VALUES(utc_timestamp) > utc_timestamp, VALUES(fuel1_percent), fuel1_percent),
+        fuel2_percent = IF(VALUES(utc_timestamp) > utc_timestamp, VALUES(fuel2_percent), fuel2_percent),
+        temperature = IF(VALUES(utc_timestamp) > utc_timestamp, VALUES(temperature), temperature),
+        mileage_km = IF(VALUES(utc_timestamp) > utc_timestamp, VALUES(mileage_km), mileage_km),
+        gps_valid = IF(VALUES(utc_timestamp) > utc_timestamp, VALUES(gps_valid), gps_valid),
+        raw_message = IF(VALUES(utc_timestamp) > utc_timestamp, VALUES(raw_message), raw_message)`,
       record
     );
   }

@@ -1,7 +1,7 @@
 const configModel = require('../models/config');
 const option1Client = require('./option1Client');
 const option2Stub = require('./option2Stub');
-const { normalizeActTimestamp } = require('../utils/actTimestamp');
+const { validateActTimestamp } = require('../utils/actTimestamp');
 
 function parseAddress(addressJson) {
   if (!addressJson) {
@@ -40,10 +40,7 @@ function build(eventPayload) {
 
   return {
     equipmentReference: eventPayload.equipmentReference,
-    eventCreatedDateTime: normalizeActTimestamp(
-      eventPayload.timestamp,
-      `event ${eventPayload.event_type || 'unknown'} for IMEI ${eventPayload.imei || 'unknown'}`
-    ),
+    eventCreatedDateTime: eventPayload.timestamp,
     originatorName: eventPayload.originatorName,
     partnerName: eventPayload.partnerName || ' ',
     eventType: 'TRANSPORT',
@@ -64,6 +61,16 @@ async function buildAndSend(eventPayload) {
   if (eventPayload.lat == null || eventPayload.lng == null) {
     console.warn(`Skipping event for IMEI ${eventPayload.imei || 'unknown'}: missing coordinates`);
     return { skipped: true, reason: 'missing_coordinates' };
+  }
+
+  try {
+    validateActTimestamp(
+      eventPayload.timestamp,
+      `event ${eventPayload.event_type || 'unknown'} for IMEI ${eventPayload.imei || 'unknown'}`
+    );
+  } catch (error) {
+    console.warn(`Skipping event for IMEI ${eventPayload.imei || 'unknown'}: ${error.message}`);
+    return { skipped: true, reason: 'invalid_timestamp' };
   }
 
   const payload = build(eventPayload);
