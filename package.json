@@ -4,6 +4,7 @@
   "private": true,
   "description": "Carrier Haulage Real Time Visibility Platform",
   "scripts": {
+    "build:css": "tailwindcss -i ./public/css/app.src.css -o ./public/css/app.css --minify",
     "postinstall": "npm install --prefix backend",
     "dev": "npm run dev --prefix backend",
     "start": "npm run start --prefix backend",
@@ -13,5 +14,11 @@
     "check": "npm run check --prefix backend",
     "security:audit": "npm run security:audit --prefix backend",
     "swagger:generate": "npm run swagger:generate --prefix backend"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
   }
 }

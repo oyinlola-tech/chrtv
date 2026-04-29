@@ -59,7 +59,7 @@ const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS device_positions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     imei VARCHAR(20) NOT NULL,
-    utc_timestamp DATETIME(3) NULL,
+    \`utc_timestamp\` DATETIME(3) NULL,
     latitude DECIMAL(10,7),
     longitude DECIMAL(10,7),
     speed FLOAT,
@@ -74,12 +74,12 @@ const schemaStatements = [
     gps_valid BOOLEAN,
     raw_message TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_imei_time (imei, utc_timestamp),
-    INDEX idx_position_time (utc_timestamp)
+    INDEX idx_imei_time (imei, \`utc_timestamp\`),
+    INDEX idx_position_time (\`utc_timestamp\`)
   )`,
   `CREATE TABLE IF NOT EXISTS latest_device_positions (
     imei VARCHAR(20) PRIMARY KEY,
-    utc_timestamp DATETIME(3) NOT NULL,
+    \`utc_timestamp\` DATETIME(3) NOT NULL,
     latitude DECIMAL(10,7),
     longitude DECIMAL(10,7),
     speed FLOAT,
@@ -95,7 +95,7 @@ const schemaStatements = [
     raw_message TEXT,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_latest_updated (updated_at),
-    INDEX idx_latest_timestamp (utc_timestamp)
+    INDEX idx_latest_timestamp (\`utc_timestamp\`)
   )`,
   `CREATE TABLE IF NOT EXISTS integration_config (
     id INT PRIMARY KEY DEFAULT 1,
@@ -290,7 +290,7 @@ async function ensureSchemaCompatibility(connection) {
   );
   await connection.query(
     `ALTER TABLE device_positions
-     MODIFY COLUMN utc_timestamp DATETIME(3) NULL`
+     MODIFY COLUMN \`utc_timestamp\` DATETIME(3) NULL`
   );
   await connection.query(
     `ALTER TABLE users

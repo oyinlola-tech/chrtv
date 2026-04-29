@@ -8,5 +8,5 @@ yarn-debug.log*
 yarn-error.log*
 backend/tests/
 backend/tests
-
+run-logs/
 backend\tests

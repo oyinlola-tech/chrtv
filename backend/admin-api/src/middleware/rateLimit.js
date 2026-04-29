@@ -1,4 +1,4 @@
-const rateLimit = require('express-rate-limit');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 
 function createRateLimiter({ windowMs = 15 * 60 * 1000, max = 20, keyGenerator, skipSuccessfulRequests = false } = {}) {
   return rateLimit({
@@ -7,7 +7,7 @@ function createRateLimiter({ windowMs = 15 * 60 * 1000, max = 20, keyGenerator, 
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     skipSuccessfulRequests,
-    keyGenerator: keyGenerator || ((req) => req.ip || req.socket.remoteAddress || 'unknown'),
+    keyGenerator: keyGenerator || ((req) => ipKeyGenerator(req.ip || req.socket?.remoteAddress || 'unknown')),
     validate: {
       trustProxy: false,
       xForwardedForHeader: false,
@@ -21,4 +21,3 @@ function createRateLimiter({ windowMs = 15 * 60 * 1000, max = 20, keyGenerator, 
 module.exports = {
   createRateLimiter,
 };
-

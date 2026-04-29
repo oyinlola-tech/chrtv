@@ -6,7 +6,7 @@
   "author": "OLuwayemi Oyinlola Michael",
   "homepage": "https://www.oyinlola.site/",
   "scripts": {
-    "dev": "node scripts/start-all.js",
+    "dev": "nodemon scripts/start-all.js",
     "schema": "node database/schema.js",
     "seed": "node scripts/seed.js",
     "start": "node scripts/start-all.js",
@@ -34,5 +34,8 @@
     "mysql2": "^3.22.3",
     "nodemailer": "^8.0.7",
     "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
   }
 }

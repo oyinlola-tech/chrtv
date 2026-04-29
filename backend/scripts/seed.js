@@ -169,10 +169,10 @@ async function seedUsers() {
 async function upsertLatestPosition(position) {
   await query(
     `INSERT INTO latest_device_positions
-      (imei, utc_timestamp, latitude, longitude, speed, heading, gps_valid, acc_state, door_state, raw_message)
+      (imei, \`utc_timestamp\`, latitude, longitude, speed, heading, gps_valid, acc_state, door_state, raw_message)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
-      utc_timestamp = VALUES(utc_timestamp),
+      \`utc_timestamp\` = VALUES(\`utc_timestamp\`),
       latitude = VALUES(latitude),
       longitude = VALUES(longitude),
       speed = VALUES(speed),
@@ -189,7 +189,7 @@ async function seedPositions() {
   for (const position of POSITIONS) {
     const utcTimestamp = new Date();
     await query(
-      `INSERT INTO device_positions (imei, utc_timestamp, latitude, longitude, speed, heading, gps_valid, acc_state, door_state)
+      `INSERT INTO device_positions (imei, \`utc_timestamp\`, latitude, longitude, speed, heading, gps_valid, acc_state, door_state)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [position.imei, utcTimestamp, position.lat, position.lng, 0, 0, true, true, false]
     );

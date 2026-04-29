@@ -105,6 +105,11 @@ async function initLogin() {
   const resetPanel = document.getElementById('reset-panel');
   const otpRequestForm = document.getElementById('otp-request-form');
   const resetPasswordForm = document.getElementById('reset-password-form');
+  const invalidCredentialsMessage = 'Incorrect username/email or password.';
+
+  const getLoginErrorMessage = (error) => (
+    error?.message === 'Invalid credentials' ? invalidCredentialsMessage : (error?.message || 'Unable to sign in')
+  );
 
   const setMode = (mode) => {
     const isLogin = mode === 'login';
@@ -136,7 +141,7 @@ async function initLogin() {
       setSession(session);
       window.location.href = '/dashboard';
     } catch (error) {
-      errorBox.textContent = error.message;
+      errorBox.textContent = getLoginErrorMessage(error);
       errorBox.classList.remove('hidden');
     }
   });

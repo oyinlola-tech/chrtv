@@ -16,6 +16,7 @@ const devicesRoutes = require('./src/routes/devices');
 const integrationRoutes = require('./src/routes/integration');
 const { ensureInitialAdmin } = require('./src/services/bootstrapAdmin');
 const { buildOpenApiSpec } = require('../docs/openapi');
+const { getServiceHost } = require('../shared/serviceSecurity');
 
 const app = express();
 const authRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20, skipSuccessfulRequests: true });
@@ -24,10 +25,14 @@ const readRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 180 });
 const writeRateLimit = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 50 });
 app.disable('x-powered-by');
 app.set('trust proxy', false);
-const allowedOrigins = (process.env.ALLOWED_ORIGIN || 'http://localhost:4000')
-  .split(',')
-  .map((item) => item.trim())
-  .filter(Boolean);
+const defaultAllowedOrigins = ['http://localhost:4000', 'http://127.0.0.1:4000'];
+const allowedOrigins = Array.from(new Set([
+  ...defaultAllowedOrigins,
+  ...(process.env.ALLOWED_ORIGIN || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean),
+]));
 
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
@@ -35,8 +40,8 @@ app.use(helmet({
     useDefaults: true,
     directives: {
       "default-src": ["'self'"],
-      "script-src": ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://unpkg.com'],
-      "style-src": ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
+      "script-src": ["'self'"],
+      "style-src": ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       "font-src": ["'self'", 'https://fonts.gstatic.com', 'data:'],
       "img-src": ["'self'", 'data:', 'https:'],
       "connect-src": ["'self'", 'http://localhost:4000', 'http://127.0.0.1:4000'],
@@ -53,6 +58,7 @@ app.use(cors({
       return callback(null, true);
     }
 
+    console.error(`[CORS] Origin denied: ${origin}`);
     return callback(new Error('CORS origin denied'));
   },
 }));
@@ -82,7 +88,7 @@ app.get('/', (_req, res) => {
 app.use(errorHandler);
 
 const port = Number(process.env.AA_PORT || 4000);
-const host = process.env.AA_HOST || '0.0.0.0';
+const host = getServiceHost('AA_HOST');
 const server = http.createServer(app);
 server.keepAliveTimeout = Number(process.env.SERVER_KEEPALIVE_TIMEOUT_MS || 65000);
 server.headersTimeout = Number(process.env.SERVER_HEADERS_TIMEOUT_MS || 66000);
