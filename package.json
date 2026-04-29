@@ -19,6 +19,6 @@
     "leaflet": "^1.9.4"
   },
   "devDependencies": {
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^4.2.4"
   }
 }
