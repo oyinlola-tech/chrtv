@@ -3,8 +3,8 @@ const crypto = require('crypto');
 const { query } = require('../../../shared/db');
 const { sendMail } = require('../../../shared/email');
 
-const OTP_TTL_MINUTES = Number(process.env.PASSWORD_RESET_OTP_TTL_MINUTES || 10);
-const OTP_MAX_ATTEMPTS = Number(process.env.PASSWORD_RESET_OTP_MAX_ATTEMPTS || 5);
+const OTP_TTL_MINUTES = Number(process.env.PASSWORD_RESET_OTP_TTL_MINUTES );
+const OTP_MAX_ATTEMPTS = Number(process.env.PASSWORD_RESET_OTP_MAX_ATTEMPTS);
 
 function normalizeEmail(value) {
   return String(value || '').trim().toLowerCase();

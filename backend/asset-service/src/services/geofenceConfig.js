@@ -1,7 +1,6 @@
 const { createHttpClient } = require('../../../shared/http');
 const { getInternalServiceUrl } = require('../../../shared/internalServices');
 const assignmentModel = require('../models/assignment');
-const geofenceAckRegistry = require('./geofenceAckRegistry');
 const orderModel = require('../models/order');
 
 const client = createHttpClient();
@@ -26,10 +25,6 @@ async function sendToDevice(assignmentId) {
   const baseUrl = getInternalServiceUrl('DEVICE_GATEWAY_URL');
 
   const facilities = enriched.facilities.slice(0, 5);
-  geofenceAckRegistry.remove(
-    enriched.imei,
-    (item) => item.transport_order_id === enriched.transport_order_id
-  );
   let queued = 0;
   for (let index = 0; index < facilities.length; index += 1) {
     const facility = facilities[index];
@@ -42,13 +37,7 @@ async function sendToDevice(assignmentId) {
         keyword: '121',
         params,
       });
-      await orderModel.markGeofencePending(enriched.transport_order_id, facility.id);
-      geofenceAckRegistry.enqueue(enriched.imei, {
-        transport_order_id: enriched.transport_order_id,
-        facility_id: facility.id,
-        area_name: area,
-        sequence_order: facility.sequence_order,
-      });
+      await orderModel.activateGeofence(enriched.transport_order_id, facility.id, area);
       queued += 1;
     } catch (error) {
       if (error.response?.status === 404) {
@@ -67,17 +56,6 @@ async function sendToDevice(assignmentId) {
 }
 
 async function resumePendingProvisioning() {
-  const pendingRows = await orderModel.listPendingGeofenceProvisioningRows();
-  geofenceAckRegistry.replaceAll(
-    pendingRows.map((row) => ({
-      imei: String(row.imei),
-      transport_order_id: row.transport_order_id,
-      facility_id: row.facility_id,
-      area_name: row.area_name || areaName(row.sequence_order),
-      sequence_order: row.sequence_order,
-    }))
-  );
-
   const assignments = await assignmentModel.listAssignmentsNeedingGeofenceProvisioning();
   for (const assignment of assignments) {
     try {

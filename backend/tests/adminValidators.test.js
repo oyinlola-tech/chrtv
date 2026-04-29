@@ -108,7 +108,7 @@ test('validateIntegrationConfigUpdate normalizes valid option1 URLs', () => {
       active_option: 'option1',
       option1_api_base_url: 'https://api.example.com/path?q=1',
       option1_auth_token: 'placeholdertoken',
-      option1_coordinates_interval_seconds: '600',
+      option1_coordinates_interval_seconds: '300',
     },
   };
   const res = createRes();
@@ -120,7 +120,23 @@ test('validateIntegrationConfigUpdate normalizes valid option1 URLs', () => {
 
   assert.equal(called, true);
   assert.equal(req.body.option1_api_base_url, 'https://api.example.com');
-  assert.equal(req.body.option1_coordinates_interval_seconds, 600);
+  assert.equal(req.body.option1_coordinates_interval_seconds, 300);
+
+  const invalidReq = {
+    body: {
+      option1_coordinates_interval_seconds: '299',
+    },
+  };
+  const invalidRes = createRes();
+  let invalidCalled = false;
+
+  validateIntegrationConfigUpdate(invalidReq, invalidRes, () => {
+    invalidCalled = true;
+  });
+
+  assert.equal(invalidCalled, false);
+  assert.equal(invalidRes.statusCode, 400);
+  assert.match(invalidRes.payload.error, /300 and 600/i);
 });
 
 test('validateIntegrationConfigUpdate requires base URL for option1 mode', () => {

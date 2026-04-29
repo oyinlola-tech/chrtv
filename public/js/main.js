@@ -671,7 +671,10 @@ async function initIntegration() {
     </select>
     <input id="base-url" class="field" placeholder="Option 1 API base URL" value="${escapeHtml(config.option1_api_base_url || '')}">
     <input id="auth-token" class="field" placeholder="Bearer token" value="${escapeHtml(config.option1_auth_token || '')}">
-    <input id="interval-seconds" class="field" type="number" min="60" value="${escapeHtml(config.option1_coordinates_interval_seconds || 600)}">
+    <div class="space-y-2">
+      <input id="interval-seconds" class="field" type="number" min="300" max="600" value="${escapeHtml(config.option1_coordinates_interval_seconds || 600)}">
+      <p class="text-sm text-slate-500">Option 1 requires coordinate updates every 5 to 10 minutes (300 to 600 seconds).</p>
+    </div>
     <button class="rounded-2xl bg-ember px-4 py-3 text-white">Save configuration</button>
   `;
 

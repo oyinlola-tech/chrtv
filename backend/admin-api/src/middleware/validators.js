@@ -213,8 +213,8 @@ function validateIntegrationConfigUpdate(req, res, next) {
 
   if (interval != null) {
     const value = Number(interval);
-    if (!Number.isInteger(value) || value < 60 || value > 86400) {
-      return badRequest(res, 'option1_coordinates_interval_seconds must be between 60 and 86400');
+    if (!Number.isInteger(value) || value < 300 || value > 600) {
+      return badRequest(res, 'option1_coordinates_interval_seconds must be between 300 and 600 seconds (5 to 10 minutes)');
     }
     req.body.option1_coordinates_interval_seconds = value;
   }

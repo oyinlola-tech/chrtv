@@ -89,6 +89,13 @@ router.post('/', requireLoopback, async (req, res) => {
       );
 
       if (areaFacility) {
+        areaFacility.deviceManaged = true;
+        await geofenceEngine.syncDeviceState(
+          payload,
+          areaFacility.id,
+          payload.data.direction === 'in'
+        );
+
         const event = {
           imei: payload.imei,
           event_type: payload.data.direction === 'in' ? 'ARRI' : 'DEPA',

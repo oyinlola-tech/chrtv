@@ -19,8 +19,8 @@ function validateConfigBody(body) {
 
   if (body.option1_coordinates_interval_seconds != null) {
     const interval = Number(body.option1_coordinates_interval_seconds);
-    if (!Number.isInteger(interval) || interval < 60 || interval > 86400) {
-      const error = new Error('option1_coordinates_interval_seconds must be between 60 and 86400');
+    if (!Number.isInteger(interval) || interval < 300 || interval > 600) {
+      const error = new Error('option1_coordinates_interval_seconds must be between 300 and 600 seconds (5 to 10 minutes)');
       error.status = 400;
       throw error;
     }

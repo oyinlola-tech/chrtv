@@ -5,13 +5,7 @@ const client = createHttpClient();
 
 async function publish(payload) {
   if (payload?.type === 'ack' && payload?.data?.keyword === '121') {
-    const baseUrl = getInternalServiceUrl('ASSET_SERVICE_URL');
-    await client.post(`${baseUrl}/internal/geofence-ack`, {
-      imei: payload.imei,
-      keyword: payload.data.keyword,
-      rawMessage: payload.data.rawMessage,
-    });
-    return;
+    return { ignored: true };
   }
 
   const baseUrl = getInternalServiceUrl('TRACKING_SERVICE_URL');

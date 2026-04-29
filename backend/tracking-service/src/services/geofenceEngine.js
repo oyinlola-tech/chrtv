@@ -2,6 +2,10 @@ const { query } = require('../../../shared/db');
 
 const imeiState = new Map();
 
+function hasDeviceManagedArea(facility) {
+  return typeof facility?.area_name === 'string' && facility.area_name.trim().length > 0;
+}
+
 function toRadians(value) {
   return (value * Math.PI) / 180;
 }
@@ -48,6 +52,17 @@ async function persistState(imei, facilityId, isInside, utcTimestamp) {
   );
 }
 
+async function syncDeviceState(positionPayload, facilityId, isInside) {
+  const utcTimestamp = positionPayload?.data?.utcTimestamp || null;
+  const key = stateKey(positionPayload.imei, facilityId);
+
+  imeiState.set(key, {
+    isInside,
+    lastUtcTimestamp: utcTimestamp,
+  });
+  await persistState(positionPayload.imei, facilityId, isInside, utcTimestamp);
+}
+
 async function evaluate(positionPayload, assignment) {
   if (!assignment || assignment.useDeviceGeofence || !Array.isArray(assignment.facilities)) {
     return [];
@@ -62,6 +77,10 @@ async function evaluate(positionPayload, assignment) {
   const events = [];
 
   for (const facility of assignment.facilities) {
+    if (hasDeviceManagedArea(facility)) {
+      continue;
+    }
+
     const distance = distanceMeters(
       lat,
       lng,
@@ -110,4 +129,5 @@ async function evaluate(positionPayload, assignment) {
 module.exports = {
   initialize,
   evaluate,
+  syncDeviceState,
 };
