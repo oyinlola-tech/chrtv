@@ -797,33 +797,46 @@ async function initSettings() {
 async function initUsers() {
   renderShell('users', 'User Management', 'Create admin or operator users with email-backed login and OTP password recovery.', `
     <section class="grid gap-6 xl:grid-cols-[420px_1fr]">
-      <form id="user-form" class="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-        <div>
-          <p class="text-xs uppercase tracking-[0.24em] text-tide">Create User</p>
-          <h3 class="mt-2 font-display text-2xl text-ink">Access account</h3>
-        </div>
-        <input id="new-username" class="field" placeholder="Username">
-        <input id="new-email" type="email" class="field" placeholder="Email address">
-        <input id="new-password" type="password" class="field" placeholder="Password">
-        <select id="new-role" class="field"><option value="admin">admin</option><option value="operator">operator</option></select>
-        <button class="rounded-2xl bg-ember px-4 py-3 text-white">Create user</button>
-      </form>
+      <div id="user-form-host"></div>
       <div id="users-table"></div>
     </section>
   `);
 
-  const usersRes = await api.users();
-  document.getElementById('user-form').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    await api.createUser({
-      username: document.getElementById('new-username').value.trim(),
-      email: document.getElementById('new-email').value.trim(),
-      password: document.getElementById('new-password').value,
-      role: document.getElementById('new-role').value,
+  const [usersRes, sessionRes] = await Promise.all([api.users(), api.me()]);
+  const isAdmin = sessionRes.user?.role === 'admin';
+  const formHost = document.getElementById('user-form-host');
+
+  formHost.innerHTML = isAdmin ? `
+    <form id="user-form" class="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+      <div>
+        <p class="text-xs uppercase tracking-[0.24em] text-tide">Create User</p>
+        <h3 class="mt-2 font-display text-2xl text-ink">Access account</h3>
+      </div>
+      <input id="new-username" class="field" placeholder="Username">
+      <input id="new-email" type="email" class="field" placeholder="Email address">
+      <input id="new-password" type="password" class="field" placeholder="Password">
+      <select id="new-role" class="field"><option value="admin">admin</option><option value="operator">operator</option></select>
+      <button class="rounded-2xl bg-ember px-4 py-3 text-white">Create user</button>
+    </form>
+  ` : `
+    <div class="rounded-[1.8rem] border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800 shadow-sm">
+      Only admin users can create new accounts.
+    </div>
+  `;
+
+  if (isAdmin) {
+    document.getElementById('user-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      await api.createUser({
+        username: document.getElementById('new-username').value.trim(),
+        email: document.getElementById('new-email').value.trim(),
+        password: document.getElementById('new-password').value,
+        role: document.getElementById('new-role').value,
+      });
+      flash('User created', 'success');
+      await initUsers();
     });
-    flash('User created', 'success');
-    await initUsers();
-  });
+  }
 
   const rows = (usersRes.users || []).map((user) => `
     <tr class="border-t border-slate-100">
