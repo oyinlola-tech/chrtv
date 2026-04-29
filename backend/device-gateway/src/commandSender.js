@@ -1,6 +1,8 @@
 const deviceManager = require('./deviceManager');
 
+const MIN_ACK_TIMEOUT_MS = Number(process.env.DEVICE_COMMAND_ACK_TIMEOUT_MIN_MS || 1000);
 const DEFAULT_ACK_TIMEOUT_MS = Number(process.env.DEVICE_COMMAND_ACK_TIMEOUT_MS || 30000);
+const MAX_ACK_TIMEOUT_MS = Number(process.env.DEVICE_COMMAND_ACK_TIMEOUT_MAX_MS || 60000);
 const pendingAcknowledgements = new Map();
 
 function pendingKey(imei, keyword) {
@@ -9,6 +11,20 @@ function pendingKey(imei, keyword) {
 
 function extractKeyword(command) {
   return String(command || '').split(',')[0].trim();
+}
+
+function normalizeAckTimeoutMs(value) {
+  if (value == null || value === '') {
+    return DEFAULT_ACK_TIMEOUT_MS;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_ACK_TIMEOUT_MS;
+  }
+
+  const rounded = Math.trunc(parsed);
+  return Math.min(MAX_ACK_TIMEOUT_MS, Math.max(MIN_ACK_TIMEOUT_MS, rounded));
 }
 
 function waitForAcknowledgement(imei, keyword, timeoutMs, metadata) {
@@ -57,7 +73,7 @@ function sendCommand(imei, command, options = {}) {
   }
 
   const keyword = extractKeyword(command);
-  const timeoutMs = Number(options.timeoutMs || DEFAULT_ACK_TIMEOUT_MS);
+  const timeoutMs = normalizeAckTimeoutMs(options.timeoutMs);
   return waitForAcknowledgement(imei, keyword, timeoutMs, options.ackContext).then((acknowledgement) => ({
     formatted,
     acknowledgement,
@@ -80,6 +96,10 @@ function resolveAcknowledgement(imei, keyword, payload) {
 }
 
 module.exports = {
+  MIN_ACK_TIMEOUT_MS,
+  MAX_ACK_TIMEOUT_MS,
+  DEFAULT_ACK_TIMEOUT_MS,
+  normalizeAckTimeoutMs,
   sendCommand,
   resolveAcknowledgement,
 };

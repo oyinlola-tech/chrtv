@@ -1,4 +1,6 @@
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,50}$/;
+const DEVICE_COMMAND_ACK_TIMEOUT_MIN_MS = Number(process.env.DEVICE_COMMAND_ACK_TIMEOUT_MIN_MS || 1000);
+const DEVICE_COMMAND_ACK_TIMEOUT_MAX_MS = Number(process.env.DEVICE_COMMAND_ACK_TIMEOUT_MAX_MS || 60000);
 
 function hasWhitespace(value) {
   for (const char of value) {
@@ -175,7 +177,7 @@ function validateDashboardLimit(req, res, next) {
 }
 
 function validateDeviceCommand(req, res, next) {
-  const { imei, keyword, params } = req.body || {};
+  const { imei, keyword, params, timeoutMs } = req.body || {};
   const normalizedKeyword = typeof keyword === 'string' ? keyword.trim() : '';
   const normalizedParams = typeof params === 'string' ? params.trim() : params;
 
@@ -192,6 +194,21 @@ function validateDeviceCommand(req, res, next) {
     (typeof normalizedParams !== 'string' || !/^[A-Za-z0-9,.:+\-_/ ]{0,500}$/.test(normalizedParams))
   ) {
     return badRequest(res, 'params contains unsupported characters');
+  }
+
+  if (timeoutMs != null) {
+    const normalizedTimeout = Number(timeoutMs);
+    if (
+      !Number.isInteger(normalizedTimeout) ||
+      normalizedTimeout < DEVICE_COMMAND_ACK_TIMEOUT_MIN_MS ||
+      normalizedTimeout > DEVICE_COMMAND_ACK_TIMEOUT_MAX_MS
+    ) {
+      return badRequest(
+        res,
+        `timeoutMs must be an integer between ${DEVICE_COMMAND_ACK_TIMEOUT_MIN_MS} and ${DEVICE_COMMAND_ACK_TIMEOUT_MAX_MS}`
+      );
+    }
+    req.body.timeoutMs = normalizedTimeout;
   }
 
   req.body.keyword = normalizedKeyword;
