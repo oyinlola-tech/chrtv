@@ -1,6 +1,7 @@
 require('../shared/env').loadEnv();
 const express = require('express');
 const ingestRoute = require('./src/routes/ingest');
+const internalRoute = require('./src/routes/internal');
 const positionStore = require('./src/services/positionStore');
 const geofenceEngine = require('./src/services/geofenceEngine');
 const {
@@ -17,6 +18,7 @@ app.use(requireLoopback);
 
 app.get('/health', (_req, res) => res.json({ ok: true, service: 'tracking-service' }));
 app.use('/ingest', ingestRoute);
+app.use('/internal', internalRoute);
 
 app.get('/positions/latest', async (_req, res) => {
   const limit = Number(_req.query.limit || 500);

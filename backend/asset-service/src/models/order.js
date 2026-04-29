@@ -131,9 +131,18 @@ async function activateGeofence(orderId, facilityId, areaName) {
 async function setAreaName(orderId, facilityId, areaName) {
   await query(
     `UPDATE order_facility_sequence
-     SET area_name = ?
+     SET area_name = ?, geofence_active = 1, geofence_provisioned = 0
      WHERE transport_order_id = ? AND facility_id = ?`,
     [areaName, orderId, facilityId]
+  );
+}
+
+async function resetGeofenceProvisioning(orderId) {
+  await query(
+    `UPDATE order_facility_sequence
+     SET area_name = NULL, geofence_active = 0, geofence_provisioned = 0
+     WHERE transport_order_id = ?`,
+    [orderId]
   );
 }
 
@@ -166,5 +175,6 @@ module.exports = {
   getOrderFacilities,
   activateGeofence,
   setAreaName,
+  resetGeofenceProvisioning,
   listPendingGeofenceProvisioningRows,
 };

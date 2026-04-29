@@ -35,7 +35,7 @@ function validateCommandRequest(req) {
   return { valid: true, normalizedKeyword, normalizedParams: String(params || '').trim() };
 }
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const validation = validateCommandRequest(req);
   if (!validation.valid) {
     return res.status(400).json({ error: validation.error });
@@ -45,11 +45,31 @@ router.post('/', (req, res) => {
   const command = validation.normalizedParams ? `${validation.normalizedKeyword},${validation.normalizedParams}` : validation.normalizedKeyword;
 
   try {
-    const formatted = sendCommand(imei, command);
-    return res.json({ ok: true, formatted });
+    const result = await sendCommand(imei, command, {
+      waitForAck: req.body.waitForAck === true,
+      timeoutMs: req.body.timeoutMs,
+      ackContext: req.body.ackContext || null,
+    });
+    return res.json({
+      ok: true,
+      formatted: result.formatted,
+      acked: req.body.waitForAck === true ? true : undefined,
+      acknowledgement: result.acknowledgement || undefined,
+    });
   } catch (error) {
     if (error.message.includes('No active socket')) {
       return res.status(404).json({ error: error.message });
+    }
+    if (error.code === 'ACK_TIMEOUT') {
+      return res.status(202).json({
+        ok: true,
+        acked: false,
+        timeout: true,
+        error: error.message,
+      });
+    }
+    if (error.code === 'ACK_PENDING') {
+      return res.status(409).json({ error: error.message });
     }
     return res.status(500).json({ error: 'Failed to send command' });
   }

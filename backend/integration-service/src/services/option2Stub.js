@@ -1,10 +1,10 @@
 async function sendCoordinates(payload) {
-  console.log('Option 2 not implemented: coordinates skipped', payload.length);
-  return { stub: true, skipped: payload.length };
+  console.log('Option 2 not implemented');
+  return { stub: true, skipped: Array.isArray(payload) ? payload.length : 0 };
 }
 
 async function sendEvent(payload) {
-  console.log('Option 2 not implemented: event skipped', payload.transportEventTypeCode || payload.eventType);
+  console.log('Option 2 not implemented');
   return { stub: true, skipped: 1 };
 }
 

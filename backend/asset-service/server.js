@@ -27,6 +27,7 @@ app.use(serviceErrorHandler);
 
 async function start() {
   await geofenceConfig.resumePendingProvisioning();
+  geofenceConfig.startRetryLoop();
 
   const port = Number(process.env.AS_PORT || 3002);
   const host = getServiceHost('AS_HOST');

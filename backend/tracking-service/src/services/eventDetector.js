@@ -6,7 +6,7 @@ const EVENT_DEDUP_WINDOW_MS = 60 * 1000;
 const recentTransportEvents = new Map();
 
 function hasDeviceManagedArea(facility) {
-  return typeof facility?.area_name === 'string' && facility.area_name.trim().length > 0;
+  return facility?.geofence_provisioned === true || facility?.geofence_provisioned === 1;
 }
 
 function parseTimestamp(value) {

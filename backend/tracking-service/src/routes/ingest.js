@@ -85,11 +85,10 @@ router.post('/', requireLoopback, async (req, res) => {
       }
 
       const areaFacility = assignment.facilities.find(
-        (facility) => facility.area_name === payload.data.areaName
+        (facility) => facility.area_name === payload.data.areaName && facility.geofence_provisioned
       );
 
       if (areaFacility) {
-        areaFacility.deviceManaged = true;
         await geofenceEngine.syncDeviceState(
           payload,
           areaFacility.id,
@@ -107,6 +106,8 @@ router.post('/', requireLoopback, async (req, res) => {
         };
         const enriched = await eventDetector.enrichEvent(event, assignment);
         await eventDetector.sendEvent(enriched);
+      } else {
+        return res.json({ ok: true, skipped: true, reason: 'geofence_not_provisioned' });
       }
     }
 

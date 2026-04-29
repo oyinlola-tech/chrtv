@@ -43,6 +43,7 @@ router.post('/', async (req, res) => {
   try {
     validateAssignmentBody(req.body);
     const assignment = await assignmentModel.createAssignment(req.body);
+    await geofenceConfig.prepareAssignmentProvisioning(assignment.transport_order_id, [assignment.imei], assignment.id);
     const provisioning = await geofenceConfig.sendToDevice(assignment.id);
     res.status(201).json({ assignment, provisioning });
   } catch (error) {
@@ -67,6 +68,13 @@ router.put('/:id', async (req, res) => {
     const assignment = await assignmentModel.updateAssignment(id, req.body);
     const needsProvisioning = previousAssignment.imei !== assignment.imei
       || Number(previousAssignment.transport_order_id) !== Number(assignment.transport_order_id);
+    if (needsProvisioning) {
+      await geofenceConfig.prepareAssignmentProvisioning(
+        assignment.transport_order_id,
+        [previousAssignment.imei, assignment.imei],
+        assignment.id
+      );
+    }
     const provisioning = needsProvisioning ? await geofenceConfig.sendToDevice(assignment.id) : null;
     res.json({ assignment, provisioning, reprovisioned: needsProvisioning });
   } catch (error) {

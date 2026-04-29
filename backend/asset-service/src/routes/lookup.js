@@ -28,12 +28,22 @@ router.get('/order/:orderId', async (req, res) => {
 });
 
 router.post('/geofence-ack', async (req, res) => {
-  return res.json({
-    ok: true,
-    acked: false,
-    ignored: true,
-    reason: '121 acknowledgements are no longer used for geofence provisioning',
-  });
+  const { transport_order_id: orderId, facility_id: facilityId, area_name: areaName } = req.body || {};
+
+  if (!Number.isInteger(Number(orderId)) || Number(orderId) < 1) {
+    return res.status(400).json({ error: 'transport_order_id must be a positive integer' });
+  }
+
+  if (!Number.isInteger(Number(facilityId)) || Number(facilityId) < 1) {
+    return res.status(400).json({ error: 'facility_id must be a positive integer' });
+  }
+
+  if (typeof areaName !== 'string' || areaName.trim().length === 0) {
+    return res.status(400).json({ error: 'area_name is required' });
+  }
+
+  await orderModel.activateGeofence(Number(orderId), Number(facilityId), areaName.trim());
+  return res.json({ ok: true, acked: true });
 });
 
 module.exports = router;

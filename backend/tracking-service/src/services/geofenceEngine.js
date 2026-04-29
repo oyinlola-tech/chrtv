@@ -3,7 +3,7 @@ const { query } = require('../../../shared/db');
 const imeiState = new Map();
 
 function hasDeviceManagedArea(facility) {
-  return typeof facility?.area_name === 'string' && facility.area_name.trim().length > 0;
+  return facility?.geofence_provisioned === true || facility?.geofence_provisioned === 1;
 }
 
 function toRadians(value) {
@@ -90,7 +90,7 @@ async function evaluate(positionPayload, assignment) {
     const inside = distance <= Number(facility.radius_meters || 500);
     const key = stateKey(positionPayload.imei, facility.id);
     const previous = imeiState.get(key);
-    const prevInside = previous?.isInside;
+    const prevInside = previous?.isInside ?? false;
 
     if (prevInside === false && inside) {
       events.push({
@@ -126,8 +126,19 @@ async function evaluate(positionPayload, assignment) {
   return events;
 }
 
+async function resetImeiState(imei) {
+  for (const key of Array.from(imeiState.keys())) {
+    if (key.startsWith(`${imei}:`)) {
+      imeiState.delete(key);
+    }
+  }
+
+  await query('DELETE FROM geofence_state WHERE imei = ?', [imei]);
+}
+
 module.exports = {
   initialize,
   evaluate,
+  resetImeiState,
   syncDeviceState,
 };
