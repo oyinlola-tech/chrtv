@@ -23,6 +23,16 @@ const ALARM_KEYWORDS = new Set([
   'tpms',
 ]);
 
+const PREFIX_ALARM_KEYWORDS = new Set([
+  'oil',
+  'oil1',
+  'oil2',
+  'dtc',
+  'service',
+  'rfid',
+  'tpms',
+]);
+
 function cleanToken(token = '') {
   return String(token).replace(/;$/, '').trim();
 }
@@ -46,6 +56,56 @@ function normalizePositionParts(parts) {
     extendedPrefix,
     fields: parts.slice(2),
   };
+}
+
+function normalizeKeyword(keyword = '') {
+  return cleanToken(keyword).replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function extractAlarmInfo(keyword = '') {
+  const normalized = normalizeKeyword(keyword);
+  if (!normalized) {
+    return null;
+  }
+
+  if (/^area\d{2}\s+(in|out)$/i.test(normalized)) {
+    return null;
+  }
+
+  if (normalized.startsWith('t:')) {
+    return {
+      alarmName: 't:',
+      keyword: normalized,
+      keywordSuffix: normalized.slice(2).trim(),
+    };
+  }
+
+  if (/^acc\s+(on|off)$/i.test(normalized)) {
+    return {
+      alarmName: normalized,
+      keyword: normalized,
+      keywordSuffix: normalized.split(/\s+/).slice(1).join(' '),
+    };
+  }
+
+  if (ALARM_KEYWORDS.has(normalized)) {
+    return {
+      alarmName: normalized,
+      keyword: normalized,
+      keywordSuffix: '',
+    };
+  }
+
+  const firstToken = normalized.split(' ')[0];
+  if (PREFIX_ALARM_KEYWORDS.has(firstToken)) {
+    return {
+      alarmName: firstToken,
+      keyword: normalized,
+      keywordSuffix: normalized.slice(firstToken.length).trim(),
+    };
+  }
+
+  return null;
 }
 
 function parsePosition(parts, rawMessage) {
@@ -174,14 +234,20 @@ function parseGeofence(parts, rawMessage) {
 }
 
 function parseAlarm(parts, rawMessage) {
-  const keyword = cleanToken(parts[1]).toLowerCase();
-  const alarmName = keyword.startsWith('t:') ? 't:' : keyword;
+  const alarm = extractAlarmInfo(parts[1]);
+  const keyword = alarm?.keyword || normalizeKeyword(parts[1]);
+  const alarmName = alarm?.alarmName || keyword;
 
-  if (!ALARM_KEYWORDS.has(alarmName) && !keyword.startsWith('dtc')) {
+  if (!alarm) {
     return null;
   }
 
   const position = parsePosition([parts[0], '001', ...parts.slice(2)], rawMessage);
+  const originalKeyword = cleanToken(parts[1]).replace(/\s+/g, ' ').trim();
+  const embeddedDiagnosticCode = alarmName === 'dtc'
+    ? originalKeyword.split(/\s+/).slice(1).join(' ').trim() || null
+    : null;
+  const embeddedFuelPercent = alarmName === 'oil' ? parsePercent(alarm.keywordSuffix) : null;
 
   return {
     imei: parts[0].replace(/^imei:/i, ''),
@@ -198,12 +264,12 @@ function parseAlarm(parts, rawMessage) {
       longitude: position.data.longitude,
       speed: position.data.speed,
       temperature: keyword.startsWith('t:') ? Number(keyword.replace(/^t:/, '')) : position.data.temperature,
-      fuel1Percent: position.data.fuel1Percent,
+      fuel1Percent: embeddedFuelPercent ?? position.data.fuel1Percent,
       fuel2Percent: position.data.fuel2Percent,
       mileageKm: position.data.mileageKm,
-      diagnosticCode: keyword === 'dtc' ? cleanToken(parts[17]) : null,
-      maintenanceDaysOrExpiration: keyword === 'service' ? cleanToken(parts[17]) : null,
-      maintenanceMileage: keyword === 'service' ? cleanToken(parts[18]) : null,
+      diagnosticCode: alarmName === 'dtc' ? (embeddedDiagnosticCode || cleanToken(parts[17])) : null,
+      maintenanceDaysOrExpiration: alarmName === 'service' ? cleanToken(parts[17]) : null,
+      maintenanceMileage: alarmName === 'service' ? cleanToken(parts[18]) : null,
     },
   };
 }
@@ -226,7 +292,7 @@ function parse(rawMessage) {
   }
 
   const parts = splitMessage(message);
-  const keyword = cleanToken(parts[1]).replace(/\s+/g, ' ').toLowerCase();
+  const keyword = normalizeKeyword(parts[1]);
 
   if (keyword === '001' || keyword.startsWith('001 ')) {
     return parsePosition(parts, rawMessage);
@@ -240,8 +306,8 @@ function parse(rawMessage) {
     return parseGeofence([parts[0], keyword, ...parts.slice(2)], rawMessage);
   }
 
-  if (keyword.startsWith('t:') || ALARM_KEYWORDS.has(keyword) || keyword === 'dtc') {
-    return parseAlarm([parts[0], keyword, ...parts.slice(2)], rawMessage);
+  if (extractAlarmInfo(keyword)) {
+    return parseAlarm(parts, rawMessage);
   }
 
   return {
