@@ -1,5 +1,5 @@
 const express = require('express');
-const { sendCommand } = require('../commandSender');
+const { sendCommand, normalizeAckTimeoutMs } = require('../commandSender');
 
 const router = express.Router();
 const COMMAND_KEYWORD_RE = /^[A-Za-z0-9]{1,20}$/;
@@ -45,9 +45,10 @@ router.post('/', async (req, res) => {
   const command = validation.normalizedParams ? `${validation.normalizedKeyword},${validation.normalizedParams}` : validation.normalizedKeyword;
 
   try {
+    const timeoutMs = normalizeAckTimeoutMs(req.body.timeoutMs);
     const result = await sendCommand(imei, command, {
       waitForAck: req.body.waitForAck === true,
-      timeoutMs: req.body.timeoutMs,
+      timeoutMs,
       ackContext: req.body.ackContext || null,
     });
     return res.json({
