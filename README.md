@@ -128,15 +128,15 @@ Read [SECURITY.md](SECURITY.md) before sharing this repository, performing secur
 
 ```text
 CH RTV 1/
-+-- README.md
-+-- LICENSE.md
-+-- NOTICE.md
-+-- SECURITY.md
-+-- SETUP.md
-+-- AUDIT_REPORT.md
-+-- docs/
-+-- backend/
-\-- public/
+-- README.md
+-- LICENSE.md
+-- NOTICE.md
+-- SECURITY.md
+-- SETUP.md
+-- AUDIT_REPORT.md
+-- docs/
+-- backend/
+-- public/
 ```
 
 ## Important Usage Restriction
